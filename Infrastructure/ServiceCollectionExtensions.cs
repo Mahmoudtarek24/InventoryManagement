@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Domain.Interface;
+using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -12,6 +15,12 @@ namespace Infrastructure
 	{
 		public static IServiceCollection AddInfrastructure(this IServiceCollection service, IConfiguration configuration)
 		{
+			service.AddDbContext<InventoryManagementDbContext>(options =>
+			{
+				options.UseSqlServer(configuration.GetConnectionString("InventoryDbConnection"));
+			});
+
+			service.AddScoped<IUnitOfWork,UnitOfWork.UnitOfWork>();
 			return service;
 		}
 	}

@@ -12,7 +12,6 @@ namespace Application
 	{
 		public static IServiceCollection AddApplication(this IServiceCollection service, IConfiguration configuration)
 		{
-
 			return service;
 		}
 	}
