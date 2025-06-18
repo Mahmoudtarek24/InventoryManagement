@@ -33,23 +33,24 @@ namespace Infrastructure.Repository
 					IsDeleted = c.IsDeleted
 				}).FirstOrDefaultAsync();
 
-		public async Task<(List<Category>,int)> GetCategorysWithFiltersAsync(CategoryFilter catF)
+		public async Task<(List<Category>, int)> GetCategorysWithFiltersAsync(BaseFilter catF)
 		{
 			var query = context.Categories.Where(e => !e.IsDeleted).AsQueryable();
 
 			if (!string.IsNullOrEmpty(catF.searchTearm))
 				query = query.Where(e => e.Name.Contains(catF.searchTearm, StringComparison.OrdinalIgnoreCase));
 
-			int totalCount = await context.Categories.Where(e => !e.IsDeleted).CountAsync();
+			int totalCount = await query.CountAsync();
+
 			if (!string.IsNullOrEmpty(catF.SortBy))
 			{
 				switch (catF.SortBy.ToLower())
 				{
-					case "Name":
+					case "name":
 						query = catF.SortAscending ? query.OrderBy(e => e.Name) : query.OrderByDescending(e => e.Name);
 						break;
 
-					case "DisplayOrder":
+					case "displayorder":
 						query = catF.SortAscending ? query.OrderBy(e => e.DisplayOrder) : query.OrderByDescending(e => e.DisplayOrder);
 						break;
 
@@ -59,9 +60,17 @@ namespace Infrastructure.Repository
 				}
 			}
 
-			query=query.Skip((catF.PageNumber-1)*1).Take(catF.PageSize);	
-			var result=await query.ToListAsync();
+			query = query.Skip((catF.PageNumber - 1) * catF.PageSize).Take(catF.PageSize);
+			var result = await query.ToListAsync();
 			return (result, totalCount);
 		}
+
+		public async Task<List<Category>> GetAllActiveCategoryAsync() =>
+						await context.Categories.AsNoTracking().Where(c => !c.IsDeleted)
+									 .ToListAsync();
+
+		public async Task<bool> IsValidCategoryIdAsync(int categoryId) =>
+			          await  context.Categories.AnyAsync(e=>e.CategoryId== categoryId&&!e.IsDeleted);		
 	}
 }
+

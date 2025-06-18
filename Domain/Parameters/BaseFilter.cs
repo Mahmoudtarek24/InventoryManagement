@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Parameters
 {
-	public class CategoryFilter
+	public class BaseFilter
 	{
 		public string searchTearm { get; set; }
 		public string SortBy { get; set; }

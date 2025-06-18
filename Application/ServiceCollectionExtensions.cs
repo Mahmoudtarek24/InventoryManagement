@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Application.Interfaces;
+using Application.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application
 {
@@ -12,6 +9,10 @@ namespace Application
 	{
 		public static IServiceCollection AddApplication(this IServiceCollection service, IConfiguration configuration)
 		{
+			service.AddScoped<ICategoryServices, CategoryServices>();
+			service.AddHttpContextAccessor();
+			service.AddScoped<IUriService, UriService>();
+			service.AddScoped<IProductServices,ProductServices>();
 			return service;
 		}
 	}

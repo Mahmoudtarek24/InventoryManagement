@@ -13,8 +13,11 @@ namespace Application.ResponseDTO_s
 	}
 	public enum ConfirmationStatus
 	{
-		Deleted,
+		SoftDeleted,
+		HardDeleted,
 		Created,
-		Failed
+		Failed,
+		Activated,
+		Deactivated
 	}
 }

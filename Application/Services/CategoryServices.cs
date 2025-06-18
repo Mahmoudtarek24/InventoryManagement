@@ -7,6 +7,7 @@ using Application.ResponseDTO_s.CategoryResponse;
 using Domain.Entity;
 using Domain.Interface;
 using Domain.Parameters;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Application.Services
@@ -14,9 +15,11 @@ namespace Application.Services
 	public class CategoryServices :ICategoryServices
 	{
 		private readonly IUnitOfWork unitOfWork ;
-		public CategoryServices(IUnitOfWork unitOfWork)
+		private readonly IUriService uriService ;	
+		public CategoryServices(IUnitOfWork unitOfWork,IUriService uriService)
 		{
 			this.unitOfWork = unitOfWork ;		
+			this.uriService = uriService ;
 		}
 		
 		public async Task<ApiResponse<CategoryResponseDto>> CreateCategoryAsync(CreateCategoryDto dto)
@@ -76,7 +79,7 @@ namespace Application.Services
 			return ApiResponse<CategoryResponseDto>.Success(response, 200);
 		}
 
-		public async Task<ApiResponse<ConfirmationResponseDto>> DeleteCategoryAsync(int id)
+		public async Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteCategoryAsync(int id)
 		{
 			var category = await unitOfWork.CategoryRepository.GetIfExistsAndNotDeletedAsync(id);
 			if (category == null)
@@ -97,15 +100,15 @@ namespace Application.Services
 			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
 			{
 				Message = $"Category with ID {category.CategoryId} was marked as deleted.",
-				status = ConfirmationStatus.Deleted
+				status = ConfirmationStatus.SoftDeleted
 			};
 
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<List<CategoryResponseDto>> GetCategoriesWithPaginationAsync(CategoryQueryParameters categoryQuery)
+		public async Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(CategoryQueryParameters categoryQuery,string route)
 		{
-			var parameter = new CategoryFilter()
+			var parameter = new BaseFilter()
 			{
 				PageNumber = categoryQuery.PageNumber,
 				PageSize = categoryQuery.PageSize,
@@ -114,10 +117,27 @@ namespace Application.Services
 				SortBy = categoryQuery.SortBy,
 			};
 
-			var (records,totalCount)=await unitOfWork.CategoryRepository.GetCategorysWithFiltersAsync(parameter);	
+			var (categories, totalCount) =await unitOfWork.CategoryRepository.GetCategorysWithFiltersAsync(parameter);
 
-			throw new NotImplementedException();
+			if (categories == null || !categories.Any())
+				throw new Exception();
+			//throw new NotFoundException("No categories found.");
+
+			var categoryDtos = categories.Select(c => c.ToResponseDto()).ToList();
+			var pagedResult =  PagedResponse<List<CategoryResponseDto>>.SimpleResponse(categoryDtos, parameter.PageNumber, parameter.PageSize, totalCount);
+			return pagedResult.AddPagingInfo(totalCount, uriService, route);
 		}
 
+		public async Task<ApiResponse<List<CategoryResponseDto>>> GetAllCategoryAsync()
+		{
+			var categories = await unitOfWork.CategoryRepository.GetAllActiveCategoryAsync();
+			
+			if (categories == null || !categories.Any())
+				throw new Exception();
+			//throw new NotFoundException("No categories found.");
+
+			var categoryDtos = categories.Select(c => c.ToResponseDto()).ToList();
+			return ApiResponse<List<CategoryResponseDto>>.Success(categoryDtos, 200);
+		}
 	}
 }

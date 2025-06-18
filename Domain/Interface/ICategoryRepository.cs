@@ -13,6 +13,8 @@ namespace Domain.Interface
 		Task<bool> IsCategoryNameUniqueAsync(string name);
 		Task<bool> IsDisplayOrderTakenAsync(int displayOrder);
 		Task<Category?> GetIfExistsAndNotDeletedAsync(int id);
-		Task<(List<Category>, int)> GetCategorysWithFiltersAsync(CategoryFilter catF);	
+		Task<(List<Category>, int)> GetCategorysWithFiltersAsync(BaseFilter catF);
+		Task<List<Category>> GetAllActiveCategoryAsync();
+		Task<bool> IsValidCategoryIdAsync(int categoryId);
 	}
 }

@@ -1,4 +1,7 @@
-﻿namespace EducationPlatform.Constants
+﻿using Domain.Entity;
+using System.Xml.Linq;
+
+namespace EducationPlatform.Constants
 {
 	public static class ValidationMessages
 	{
@@ -16,6 +19,7 @@
 		public const string stockQuntity = "The quantity for this product is currently zero, so its availability cannot be changed until stock is added. At the moment, this item is marked as unavailable. Please update the stock quantity to make it available again.";
 		public const string ConfirmPasswordNotMatch = "The password and confirmation password do not match.";
 		public const string MaxDuration = "Duration must be between 15 minute and 2 hours.";
+		public const string IdValue = "{0} must be greater than 0.";
 
 
 		public const string MaxMinLength = "The {0} must be at least {2} and at max {1} characters long.";
@@ -44,5 +48,9 @@
 
 		public const string VideoSizeExceeded = "The video file is too large. Maximum allowed size is {0} MB.";
 		public const string VideoMimeTypeInvalid = "Invalid video MIME type '{0}'.";
+
+
+		public const string PositivePrice = "Price must be greater than 0.";
+		public const string DuplicatProductName = "A product with the same name already exists in this category.";
 	}
 }

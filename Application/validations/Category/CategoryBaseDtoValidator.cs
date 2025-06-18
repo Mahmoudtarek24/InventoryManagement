@@ -1,4 +1,4 @@
-﻿using Application.DTO_s;
+﻿using Application.DTO_s.CategoryDto_s;
 using Domain.Interface;
 using EducationPlatform.Constants;
 using FluentValidation;
@@ -8,14 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.validations
+namespace Application.validations.Category
 {
-	public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
+	public class CategoryBaseDtoValidator<T> :AbstractValidator<T> where T : CategoryBaseDto
 	{
 		private readonly IUnitOfWork unitOfWork;
-		public CreateCategoryDtoValidator(IUnitOfWork unitOfWork)
+		public CategoryBaseDtoValidator(IUnitOfWork unitOfWork)
 		{
-			this.unitOfWork = unitOfWork;	
+			this.unitOfWork = unitOfWork;
 
 			RuleFor(e => e.Name).NotEmpty().WithMessage(string.Format(ValidationMessages.RequiredField, "Name"))
 							  .Length(2, 50)
@@ -36,7 +36,6 @@ namespace Application.validations
 			RuleFor(e => e.DisplayOrder)
 		   .MustAsync(BeUniqueDisplayOrderAsync).WithMessage("Display order already exists.");
 		}
-
 		private async Task<bool> BeUniqueNameAsync(string name, CancellationToken cancellationToken)
 		{
 			return !await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(name);
