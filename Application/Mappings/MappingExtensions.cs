@@ -64,5 +64,6 @@ namespace Application.Mappings
 				CategoryName = product.Category.Name
 			};
 		}
+		
 	}
 }

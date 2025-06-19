@@ -18,6 +18,7 @@ namespace Application.ResponseDTO_s
 		Created,
 		Failed,
 		Activated,
-		Deactivated
+		Deactivated,
+		Updated
 	}
 }

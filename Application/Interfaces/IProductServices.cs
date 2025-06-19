@@ -14,12 +14,13 @@ namespace Application.Interfaces
 	public interface IProductServices
 	{
 		Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto);
+		Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos);
 		Task<ApiResponse<ProductResponseDto>> GetProductByIdAsync(int id);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteProductAsync(int id);
 		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(ProductQueryParameters productQuery, string route);
 		Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId);
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status);
-		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto);
+		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto); //dint change name if have quentity on stick
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetDeletedProductsWithStockAsync();
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetLowStockProductsAsync(int threshold);
 		//Task<ApiResponse<List<ProductWithWarehouseDto>>> GetProductsByWarehouseAsync(int warehouseId);

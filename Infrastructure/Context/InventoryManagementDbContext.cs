@@ -1,4 +1,6 @@
 ﻿using Domain.Entity;
+using Infrastructure.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Context
 {
-	public class InventoryManagementDbContext :DbContext
+	public class InventoryManagementDbContext : IdentityDbContext<ApplicationUser>
 	{
 		public InventoryManagementDbContext(DbContextOptions<InventoryManagementDbContext> options) : base(options) { }
 
@@ -28,5 +30,6 @@ namespace Infrastructure.Context
 		 
 		public DbSet<Category> Categories { get; set; }
 		public DbSet<Product> Products { get; set; }
+		public DbSet<ApplicationUser> ApplicationUsers { get; set; }	
 	}
 }

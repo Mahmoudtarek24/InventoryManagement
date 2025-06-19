@@ -1,13 +1,9 @@
 ﻿using Domain.Interface;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
 
 namespace Infrastructure.Repository
 {
@@ -26,11 +22,15 @@ namespace Infrastructure.Repository
 			await this.entity.AddAsync(entity);	
 		}
 
+		public async Task AddRangeAsync(IEnumerable<T> entities)
+		{
+			//await context.BulkInsertAsync(entities);
+		}
+
 		public void Delete(T entity)
 		{
 			this.entity.Remove(entity);
 		}
-
 		public async Task DeleteByIdAsync(int id)
 		{
 			var item = await entity.FindAsync(id);
@@ -39,12 +39,10 @@ namespace Infrastructure.Repository
 				entity.Remove(item);
 			}
 		}
-
 		public async Task<IEnumerable<T>> GetAllEntities()
 		{
 			return await entity.ToListAsync();
 		}
-
 		public async Task<T?> GetByIdAsync(int id)
 		{
 			return await entity.FindAsync(id);

@@ -1,13 +1,10 @@
 ﻿using Domain.Interface;
 using Infrastructure.Context;
+using Infrastructure.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure
 {
@@ -21,6 +18,10 @@ namespace Infrastructure
 			});
 
 			service.AddScoped<IUnitOfWork,UnitOfWork.UnitOfWork>();
+			service.AddIdentity<ApplicationUser, IdentityRole>(options => { })
+				.AddEntityFrameworkStores<InventoryManagementDbContext>()
+				.AddDefaultTokenProviders();
+
 			return service;
 		}
 	}

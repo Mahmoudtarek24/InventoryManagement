@@ -26,15 +26,15 @@ namespace Application.Services
 		}
 		public async Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto)
 		{
-			bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
-			if (!nameExists)
-				throw new Exception();
-			//throw new ConflictException($"Product with name '{dto.Name}' already exists.");
-
 			bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
 			if (!categoryExists)
 				throw new Exception();
 			//  throw new NotFoundException($"Category with ID '{dto.CategoryId}' not found.");
+
+			bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
+			if (!nameExists)
+				throw new Exception();
+			//throw new ConflictException($"Product with name '{dto.Name}' already exists.");
 
 			var product = new Product
 			{
@@ -160,6 +160,26 @@ namespace Application.Services
 			return ApiResponse<List<ProductWithCategoryRespondDto>>.Success(response, 200, message);
 		}
 
+
+		public async Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos)
+		{
+			List<string> Errors = new List<string>();
+
+			foreach (var dto in dtos)
+			{
+				bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
+				if (!categoryExists)
+					Errors.Add($"Category with ID '{dto.CategoryId}' not found.");
+			}
+			foreach (var dto in dtos)
+			{
+				bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
+				if (!nameExists)
+					Errors.Add($"Product with name '{dto.Name}' already exists.");
+			}
+
+			return default;
+		}
 		private async Task<string> GenerateBarcode(Product product)
 		{
 			string barcode;
@@ -169,9 +189,7 @@ namespace Application.Services
 				barcode = $"CT{product.CategoryId:D2}-Sup11-{product.CreateOn.ToString("yyMM")}-{Number}";
 
 			} while (!await unitOfWork.ProductRepository.IsBarcodeUniqueAsync(barcode));
-
 			return barcode;
 		}
-
 	}
 }
