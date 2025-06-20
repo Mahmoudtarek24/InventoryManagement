@@ -2,12 +2,20 @@
 using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
+using Infrastructure.Identity_Models;
 using Infrastructure.Mappings;
 using Infrastructure.Models;
+using Infrastructure.settings;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,10 +25,13 @@ namespace Infrastructure.Services
 	{
 		private readonly UserManager<ApplicationUser> userManager;
 		private readonly RoleManager<IdentityRole> roleManager;
-		public AuthService(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager)
+		private readonly JWTSetting jWTSetting;
+		public AuthService(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager
+						  , IOptions<JWTSetting> options)
 		{
 			this.userManager = UserManager;
 			this.roleManager = roleManager;
+			this.jWTSetting = options.Value;
 		}
 		public async Task<ApiResponse<AuthenticationResponseDto>> CreateUserAsync(CreateUserDto dto)
 		{
@@ -58,7 +69,8 @@ namespace Infrastructure.Services
 				Email = dto.Email,
 				EmailConfirmed = true,
 				PhoneNumber = dto.PhoneNumber,
-				FullName = dto.FullName 
+				FullName = dto.FullName,
+				CreateOn = DateTime.Now,
 			};
 
 			var createResult = await userManager.CreateAsync(newUser, dto.Password);
@@ -80,14 +92,13 @@ namespace Infrastructure.Services
 				}
 			}
 			var Message = $"User '{dto.UserName}' created successfully. Assigned roles: {(validRoles.Any() ? string.Join(", ", validRoles.ToArray()) : "None")}";
-			var responseDto = newUser.ToResponseDto();
-			responseDto.Roles = validRoles.ToArray();
-
+			var responseDto = newUser.ToResponseDto(validRoles.ToArray());
 			return ApiResponse<AuthenticationResponseDto>.Success(responseDto, 201, Message);
 		}
 
 		public async Task<ApiResponse<SignInResponseDto>> SignInAsync(SignInDto SignInDto)
 		{
+			var responseDto = new SignInResponseDto();
 			var user = await userManager.FindByEmailAsync(SignInDto.Email);
 			if (user == null)
 				throw new Exception();
@@ -105,17 +116,84 @@ namespace Infrastructure.Services
 
 			var userRoles = await userManager.GetRolesAsync(user);
 
-			// Generate JWT token (you'll need to implement this based on your JWT configuration)
-			//var token = GenerateJwtToken(user, userRoles);////////////////////////////////////////////////////////
+			var token = await GenerateJwtToken(user, userRoles.ToArray());
 
-			var responseDto = new SignInResponseDto()
+
+			// i want to check if this user have active token  
+			if (user.RefreshTokens.Any(e => e.IsActive))
 			{
-				//Token = token,
-				Email = user.Email,
-				UserId = user.Id,
-			};
+				var activeRefreshToken = user.RefreshTokens.FirstOrDefault(e => e.IsActive); /////ده معناه ان المستخدم هيبا عنده ريفريش توكن واحد بس اكتف مش اكتر من واحد
+				responseDto.RefreshToken = activeRefreshToken.Token;
+				responseDto.RefreshTokenExpiration=activeRefreshToken.Expires;
+			}
+			else
+			{
+				var tokens = GenerateRefreshToken();
+				var refreshToken = await SaveRefreshTokenAsync(user, tokens, "123"); ////edit ip address
+				responseDto.RefreshToken = refreshToken.Token;
+				responseDto.RefreshTokenExpiration = refreshToken.Expires;
+			}
+			responseDto.Token = new JwtSecurityTokenHandler().WriteToken(token);
+			responseDto.Email = user.Email;
+			responseDto.UserId = user.Id;
 
 			return ApiResponse<SignInResponseDto>.Success(responseDto, 200, "Sign in successful");
+		}
+		public async Task<JwtSecurityToken> GenerateJwtToken(ApplicationUser user, string[] userRoles)
+		{
+			List<Claim> claims = new List<Claim>();
+
+			if (userRoles.Length > 0)
+			{
+				foreach (var role in userRoles)
+				{
+					claims.Add(new Claim(ClaimTypes.Role, role));
+				}
+			}
+			claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
+			claims.Add(new Claim(ClaimTypes.Email, user.Email));
+			claims.Add(new Claim(ClaimTypes.Name, user.UserName));
+			claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+
+			SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jWTSetting.Key));
+			SigningCredentials signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+			return new JwtSecurityToken(
+				claims: claims,
+				issuer: jWTSetting.Issuer,
+				audience: jWTSetting.Audience,
+				expires: DateTime.Now.AddDays(jWTSetting.DurationInDays),
+				signingCredentials: signingCredentials);
+		}
+		public string GenerateRefreshToken()
+		{
+			var randomBytes = new byte[64];
+			using var generator = new RNGCryptoServiceProvider();
+			generator.GetBytes(randomBytes);
+			return Convert.ToBase64String(randomBytes);
+		}
+		public async Task<RefreshToken> SaveRefreshTokenAsync(ApplicationUser user, string token, string ipAddress)
+		{
+			var refreshToken = new RefreshToken
+			{
+				CreatedByIp = ipAddress,
+				CreateOn = DateTime.Now,
+				Expires = DateTime.Now.AddDays(jWTSetting.RefreshTokenExpirationInDays),
+				Token = GenerateRefreshToken(),
+			};
+			user.RefreshTokens.Add(refreshToken);	
+			await userManager.UpdateAsync(user);
+			return refreshToken;
+		}
+		public void SetRefreshTokenCookie(HttpResponse response, string refreshToken)
+		{
+			var cookieOptions = new CookieOptions
+			{
+				HttpOnly = true,
+				IsEssential = true,
+				Secure = true,
+				Expires = DateTime.Now.AddDays(jWTSetting.RefreshTokenExpirationInDays).ToLocalTime(),
+			};
+			response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 		}
 	}
 }

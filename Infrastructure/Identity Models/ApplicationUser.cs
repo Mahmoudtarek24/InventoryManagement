@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Infrastructure.Identity_Models;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -12,5 +13,9 @@ namespace Infrastructure.Models
 	{
 		public string FullName { get; set; } = null!;
 		public string ProfileImage { get; set; }
+		public bool IsDeleted { get; set; }
+		public DateTime CreateOn { get; set; }
+		public DateTime? LastUpdateOn { get; set; }
+		public ICollection<RefreshToken> RefreshTokens { get; set; }
 	}
 }

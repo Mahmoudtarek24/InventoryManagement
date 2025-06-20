@@ -1,6 +1,9 @@
-﻿using Domain.Interface;
+﻿using Application.Interfaces;
+using Domain.Interface;
 using Infrastructure.Context;
 using Infrastructure.Models;
+using Infrastructure.Services;
+using Infrastructure.settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +25,10 @@ namespace Infrastructure
 				.AddEntityFrameworkStores<InventoryManagementDbContext>()
 				.AddDefaultTokenProviders();
 
+			service.Configure<JWTSetting>(options => configuration.GetSection("JWTSetting").Bind(options));
+			service.AddScoped<IUserService, UserService>();
+			service.AddScoped<IAuthService, AuthService>();
+			service.AddScoped<IRoleService, RoleService>();
 			return service;
 		}
 	}

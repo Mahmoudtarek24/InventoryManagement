@@ -11,19 +11,24 @@ namespace Infrastructure.Mappings
 {
 	public static class MappingExtensions
 	{
-		public static AuthenticationResponseDto ToResponseDto(this ApplicationUser user)
+		public static AuthenticationResponseDto ToResponseDto(this ApplicationUser user, string[] roles=null)
 		{
 			if (user is null)
 				return null;
 
-			return new AuthenticationResponseDto()
+			var response = new AuthenticationResponseDto()
 			{
-				Email=user.Email,
-				FullName=user.FullName,
-				Id=user.Id,
-				UserName=user.UserName,
-				PhoneNumber=user.PhoneNumber,
+				Email = user.Email,
+				FullName = user.FullName,
+				Id = user.Id,
+				UserName = user.UserName,
+				PhoneNumber = user.PhoneNumber,
 			};
+
+			if (roles != null)
+				response.Roles = roles;
+			return response;
 		}
 	}
 }
+

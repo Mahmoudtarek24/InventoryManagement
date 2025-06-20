@@ -1,6 +1,9 @@
 using Application;
 using Infrastructure;
 using Infrastructure.Seeds;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace InventoryManagement
@@ -17,6 +20,28 @@ namespace InventoryManagement
 			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
+
+			builder.Services.AddAuthentication(opthios =>
+			{
+				opthios.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+				opthios.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;	
+				opthios.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+			}).AddJwtBearer(options =>
+			{
+				options.SaveToken = true;
+				options.RequireHttpsMetadata = true;
+				options.TokenValidationParameters = new TokenValidationParameters
+				{
+					ValidateIssuer = true,
+					ValidateAudience = true,
+					ValidateIssuerSigningKey = true,
+					ValidateLifetime = true,
+					ValidIssuer = builder.Configuration["JWTSetting:Issuer"],
+					ValidAudience = builder.Configuration["JWTSetting:Audience"],
+					IssuerSigningKey=new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWTSetting:Key"])),
+					ClockSkew=TimeSpan.Zero, //thats me the token be valid only for her time withot any secode valid after expired
+				};
+			});
 
 			builder.Services.AddInfrastructure(builder.Configuration)
 							.AddApplication(builder.Configuration);
