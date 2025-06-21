@@ -20,7 +20,8 @@ namespace EducationPlatform.Constants
 		public const string ConfirmPasswordNotMatch = "The password and confirmation password do not match.";
 		public const string MaxDuration = "Duration must be between 15 minute and 2 hours.";
 		public const string IdValue = "{0} must be greater than 0.";
-
+		public const string InvalidRole = "One or more roles are invalid.";
+		public const string NotFoundEmail = "Email address not found";
 
 		public const string MaxMinLength = "The {0} must be at least {2} and at max {1} characters long.";
 		public const string Duplicated = "Another record with the same {0} is already exists!";
@@ -52,5 +53,6 @@ namespace EducationPlatform.Constants
 
 		public const string PositivePrice = "Price must be greater than 0.";
 		public const string DuplicatProductName = "A product with the same name already exists in this category.";
+		public const string InvalidEmailOrPassword= "Invalid email or password";
 	}
 }

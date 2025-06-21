@@ -11,7 +11,6 @@ namespace Application
 		{
 			service.AddScoped<ICategoryServices, CategoryServices>();
 			service.AddHttpContextAccessor();
-			service.AddScoped<IUriService, UriService>();
 			service.AddScoped<IProductServices,ProductServices>();
 			return service;
 		}

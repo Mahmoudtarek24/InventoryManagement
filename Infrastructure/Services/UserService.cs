@@ -1,14 +1,18 @@
 ﻿using Application.DTO_s.AuthenticationDto_s;
 using Application.Interfaces;
 using Application.ResponseDTO_s;
+using Application.ResponseDTO_s.AuthenticationResponse;
 using Application.Services;
 using Domain.Parameters;
+using Infrastructure.Enum;
+using Infrastructure.InternalInterfaces;
 using Infrastructure.Mappings;
 using Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,11 +22,16 @@ namespace Infrastructure.Services
 	public class UserService : IUserService
 	{
 		private readonly UserManager<ApplicationUser> userManager;
-		private readonly RoleManager<IdentityRole> roleManager;
-		public UserService(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager)
+		private readonly IImageStorageService imageStorageService;
+		private readonly ITokenService tokenService;
+		private readonly IUriService uriService;	
+		public UserService(UserManager<ApplicationUser> UserManager , IImageStorageService imageStorageService
+			              ,ITokenService tokenService,IUriService uriService)
 		{
 			this.userManager = UserManager;
-			this.roleManager = roleManager;
+			this.imageStorageService = imageStorageService;
+			this.tokenService = tokenService;	
+			this.uriService = uriService;	
 		}
 		public async Task<ApiResponse<AuthenticationResponseDto>> FindByIdAsync(string userId)
 		{
@@ -34,6 +43,8 @@ namespace Infrastructure.Services
 			var userRoles = await userManager.GetRolesAsync(user);
 
 			var responseDto = user.ToResponseDto(userRoles.ToArray());
+			responseDto.ProfileImageUrl = $@"{uriService.GetBaseUri()}Images/{user.ProfileImage}";
+
 			return ApiResponse<AuthenticationResponseDto>.Success(responseDto, 200);
 		}
 		public async Task<ApiResponse<AuthenticationResponseDto>> FindByEmailAsync(string email)
@@ -180,6 +191,92 @@ namespace Infrastructure.Services
 			};
 
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
+		}
+
+		public async Task<ApiResponse<UpdateUserRespondDto>> UpdateProfileAsync(UpdateUserProfileDto dto)
+		{
+			var existingUser = await userManager.FindByIdAsync(dto.UserId);
+			if (existingUser == null)
+				throw new Exception();
+			//throw new NotFoundException($"User with ID '{dto.UserId}' not found.");
+
+
+			if (!string.IsNullOrEmpty(dto.UserName) && dto.UserName != existingUser.UserName)
+			{
+				var userNameExists = await userManager.FindByNameAsync(dto.UserName);
+				if (userNameExists != null)
+					throw new Exception();
+				//throw new ConflictException($"Username '{dto.UserName}' already exists.");
+			}
+
+			if (!string.IsNullOrEmpty(dto.Email) && dto.Email != existingUser.Email)
+			{
+				var emailExists = await userManager.FindByEmailAsync(dto.Email);
+				if (emailExists != null)
+					throw new Exception();
+				//throw new ConflictException($"Email '{dto.Email}' already exists.");
+			}
+
+			string imageFileName = null;
+			if (dto.ImageFile != null)
+			{
+				var (uploadSuccess, fileName) = await imageStorageService.UploadImage(dto.ImageFile, ImageFolderName.User.ToString());
+				if (!uploadSuccess)
+					throw new Exception();
+				//throw new InternalServerErrorException("Failed to upload profile image.");
+
+				if (!string.IsNullOrEmpty(existingUser.ProfileImage))
+				{
+					imageStorageService.DeleteImage(existingUser.ProfileImage);
+				}
+
+				imageFileName = $"{ImageFolderName.User.ToString()}/{fileName}";  //  products/product123.jpg will store on database
+			}
+			bool hasChange = default;
+
+			if (!string.IsNullOrEmpty(dto.UserName))
+			{
+				existingUser.UserName = dto.UserName;
+				hasChange = true;
+			}
+
+			if (!string.IsNullOrEmpty(dto.Email))
+			{
+				existingUser.Email = dto.Email;
+				hasChange = true;
+			}
+			if (!string.IsNullOrEmpty(dto.FullName))
+				existingUser.FullName = dto.FullName;
+
+			if (imageFileName != null)
+				existingUser.ProfileImage = imageFileName;
+
+			var updateResult = await userManager.UpdateAsync(existingUser);
+			if (!updateResult.Succeeded)
+			{
+				var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+				throw new Exception();
+				//throw new InternalServerErrorException($"Failed to update user profile: {errors}");
+			}
+
+			var BaseUri = uriService.GetBaseUri();
+			var responseDto = new UpdateUserRespondDto
+			{
+				Email=existingUser.Email,
+				FullName=existingUser.FullName,
+				UserId=existingUser.Id,
+				UserName=existingUser.UserName,
+				ProfileImageUrl = $@"{BaseUri}Images/{existingUser.ProfileImage}" //////////////////////////
+			};
+
+			var userRoles = await userManager.GetRolesAsync(existingUser);
+			if (hasChange) 
+			{ 
+				var Token=await tokenService.GenerateJwtToken(existingUser, userRoles.ToArray());	
+			    responseDto.AccessToken = new JwtSecurityTokenHandler().WriteToken(Token);
+			}
+			var message = $"Profile for user '{existingUser.UserName}' updated successfully.";
+			return ApiResponse<UpdateUserRespondDto>.Success(responseDto, 200, message);
 		}
 	}
 }

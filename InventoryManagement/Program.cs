@@ -60,7 +60,7 @@ namespace InventoryManagement
 				await SeedRoles.AddRolesAsync(service);
 				await AddAdmin.SeedAdminAsync(service);
 			}
-
+			app.UseStaticFiles();	
 			app.UseHttpsRedirection();
 
 			app.UseAuthentication();

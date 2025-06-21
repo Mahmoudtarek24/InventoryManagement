@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace Application.validations.Category
 {
-	public class UpdateCategoryDtoValidator :AbstractValidator<UpdateCategoryDto>
+	public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
 	{
 		public UpdateCategoryDtoValidator(IUnitOfWork unitOfWork)
 		{
 			Include(new CategoryBaseDtoValidator<UpdateCategoryDto>(unitOfWork));
 
 			RuleFor(p => p.CategoryId)
-					.GreaterThan(0).WithMessage(string.Format(ValidationMessages.IdValue,"Category Id"));
+					.GreaterThan(0).WithMessage(string.Format(ValidationMessages.IdValue, "Category Id"));
 		}
 	}
 }

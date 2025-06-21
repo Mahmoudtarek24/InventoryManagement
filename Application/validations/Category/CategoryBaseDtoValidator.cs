@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Application.validations.Category
 {
-	public class CategoryBaseDtoValidator<T> :AbstractValidator<T> where T : CategoryBaseDto
+	public class CategoryBaseDtoValidator<T> : AbstractValidator<T> where T : CategoryBaseDto
 	{
 		private readonly IUnitOfWork unitOfWork;
 		public CategoryBaseDtoValidator(IUnitOfWork unitOfWork)

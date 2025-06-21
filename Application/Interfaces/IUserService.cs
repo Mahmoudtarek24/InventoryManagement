@@ -1,5 +1,6 @@
 ﻿using Application.DTO_s.AuthenticationDto_s;
 using Application.ResponseDTO_s;
+using Application.ResponseDTO_s.AuthenticationResponse;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,6 @@ namespace Application.Interfaces
 		Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(UserQueryParameters query, string route);
 		Task<ConfirmationResponseDto> UnLOckedUsers(string userId);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteUserAsync(string userId);
-	    //update 
+		Task<ApiResponse<UpdateUserRespondDto>> UpdateProfileAsync(UpdateUserProfileDto dto);
 	}
 }

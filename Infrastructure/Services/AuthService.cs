@@ -2,18 +2,19 @@
 using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
+using Azure.Core;
 using Infrastructure.Identity_Models;
+using Infrastructure.InternalInterfaces;
 using Infrastructure.Mappings;
 using Infrastructure.Models;
 using Infrastructure.settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,15 +24,15 @@ namespace Infrastructure.Services
 {
 	public class AuthService : IAuthService
 	{
+		private readonly ITokenService tokenService;
 		private readonly UserManager<ApplicationUser> userManager;
 		private readonly RoleManager<IdentityRole> roleManager;
-		private readonly JWTSetting jWTSetting;
 		public AuthService(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager
-						  , IOptions<JWTSetting> options)
+						  , ITokenService tokenService)
 		{
 			this.userManager = UserManager;
 			this.roleManager = roleManager;
-			this.jWTSetting = options.Value;
+			this.tokenService = tokenService;	
 		}
 		public async Task<ApiResponse<AuthenticationResponseDto>> CreateUserAsync(CreateUserDto dto)
 		{
@@ -116,7 +117,7 @@ namespace Infrastructure.Services
 
 			var userRoles = await userManager.GetRolesAsync(user);
 
-			var token = await GenerateJwtToken(user, userRoles.ToArray());
+			var token = await tokenService.GenerateJwtToken(user, userRoles.ToArray());
 
 
 			// i want to check if this user have active token  
@@ -128,72 +129,58 @@ namespace Infrastructure.Services
 			}
 			else
 			{
-				var tokens = GenerateRefreshToken();
-				var refreshToken = await SaveRefreshTokenAsync(user, tokens, "123"); ////edit ip address
+				var tokens = tokenService.GenerateRefreshToken();
+				var refreshToken = await tokenService.SaveRefreshTokenAsync(user, tokens, "123"); ////edit ip address
 				responseDto.RefreshToken = refreshToken.Token;
 				responseDto.RefreshTokenExpiration = refreshToken.Expires;
 			}
-			responseDto.Token = new JwtSecurityTokenHandler().WriteToken(token);
-			responseDto.Email = user.Email;
-			responseDto.UserId = user.Id;
+			responseDto.AccessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
 			return ApiResponse<SignInResponseDto>.Success(responseDto, 200, "Sign in successful");
 		}
-		public async Task<JwtSecurityToken> GenerateJwtToken(ApplicationUser user, string[] userRoles)
-		{
-			List<Claim> claims = new List<Claim>();
 
-			if (userRoles.Length > 0)
+		public async Task RevokeTokenAsync(string refreshToken)
+		{
+			await tokenService.RevokeRefreshTokenAsync(refreshToken);
+		}
+
+		public async Task<ApiResponse<SignInResponseDto>> RefreshTokenAsync(string token, HttpContext httpContext)
+		{
+			var dto = await tokenService.RefreshTokenAsync(token, httpContext);
+
+			return ApiResponse<SignInResponseDto>.Success(dto, 200);
+		}
+
+		public async Task<bool> IsUserNameUniqueAsync(string userName) =>
+			       await userManager.Users.AsNoTracking().AnyAsync(e=>e.UserName.ToLower() == userName.ToLower());
+
+		public async Task<bool> IsEmailUniqueAsync(string email) =>
+			      await userManager.Users.AsNoTracking().AnyAsync(e => e.Email.ToLower() == email.ToLower());
+
+		public async Task<bool> IsPhoneNumberUniqueAsync(string phoneNumber) =>
+			      await userManager.Users.AsNoTracking().AnyAsync(e => e.PhoneNumber == phoneNumber);
+		public async Task<bool> IsValidRolesIdAsync(string[] RolesId)
+		{
+			///select count(*) from roletable where id in ("rol1 , role2,.....")
+			int validCount = await roleManager.Roles.AsNoTracking().CountAsync(r => RolesId.Contains(r.Id));
+			return validCount == RolesId.Length;
+		}
+
+		public async Task<bool> VerifySignInCredentialsAsync(string Email, string password)
+		{
+			try
 			{
-				foreach (var role in userRoles)
-				{
-					claims.Add(new Claim(ClaimTypes.Role, role));
-				}
+				var user = await userManager.FindByEmailAsync(Email);
+
+				if (user is null)
+					return false;
+
+				return await userManager.CheckPasswordAsync(user, password);
 			}
-			claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
-			claims.Add(new Claim(ClaimTypes.Email, user.Email));
-			claims.Add(new Claim(ClaimTypes.Name, user.UserName));
-			claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-
-			SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jWTSetting.Key));
-			SigningCredentials signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
-			return new JwtSecurityToken(
-				claims: claims,
-				issuer: jWTSetting.Issuer,
-				audience: jWTSetting.Audience,
-				expires: DateTime.Now.AddDays(jWTSetting.DurationInDays),
-				signingCredentials: signingCredentials);
-		}
-		public string GenerateRefreshToken()
-		{
-			var randomBytes = new byte[64];
-			using var generator = new RNGCryptoServiceProvider();
-			generator.GetBytes(randomBytes);
-			return Convert.ToBase64String(randomBytes);
-		}
-		public async Task<RefreshToken> SaveRefreshTokenAsync(ApplicationUser user, string token, string ipAddress)
-		{
-			var refreshToken = new RefreshToken
-			{
-				CreatedByIp = ipAddress,
-				CreateOn = DateTime.Now,
-				Expires = DateTime.Now.AddDays(jWTSetting.RefreshTokenExpirationInDays),
-				Token = GenerateRefreshToken(),
-			};
-			user.RefreshTokens.Add(refreshToken);	
-			await userManager.UpdateAsync(user);
-			return refreshToken;
-		}
-		public void SetRefreshTokenCookie(HttpResponse response, string refreshToken)
-		{
-			var cookieOptions = new CookieOptions
-			{
-				HttpOnly = true,
-				IsEssential = true,
-				Secure = true,
-				Expires = DateTime.Now.AddDays(jWTSetting.RefreshTokenExpirationInDays).ToLocalTime(),
-			};
-			response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+			catch
+			{   //any excption return false only "on calme" 
+				return false;
+			}
 		}
 	}
 }

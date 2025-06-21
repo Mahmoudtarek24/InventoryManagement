@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Application.validations.Product
 {
-	public class CreateProductDtoValidator :AbstractValidator<CreateProductDto>
+	public class CreateProductDtoValidator : AbstractValidator<CreateProductDto>
 	{
 		private readonly IUnitOfWork unitOfWork;
 		public CreateProductDtoValidator(IUnitOfWork unitOfWork)
@@ -21,18 +21,18 @@ namespace Application.validations.Product
 
 			RuleFor(e => e.Name).NotEmpty().WithMessage(string.Format(ValidationMessages.RequiredField, "Name"))
 				.Length(2, 150).WithMessage(string.Format(ValidationMessages.StringLent, "Product Name", 2, 150))
-				.MustAsync((dto, name, ct)=>{
+				.MustAsync((dto, name, ct) => {
 					return IsProductNameUniqueWithinCategoryAsync(name, dto.CategoryId, ct);
-		    	}).WithMessage(ValidationMessages.DuplicatProductName); 
+				}).WithMessage(ValidationMessages.DuplicatProductName);
 
 			RuleFor(e => e.Price).GreaterThan(0).WithMessage(ValidationMessages.PositivePrice);
 
 		}
 
 		private async Task<bool> CategoryExistsAsync(int categoryId, CancellationToken cancellationToken) =>
-			! await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(categoryId);
+			!await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(categoryId);
 
 		private async Task<bool> IsProductNameUniqueWithinCategoryAsync(string productName, int categoryId, CancellationToken cancellationToken) =>
-		    !await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(productName,categoryId);
+			!await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(productName, categoryId);
 	}
 }

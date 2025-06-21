@@ -18,8 +18,8 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="Filters\" />
     <Folder Include="Middleware\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>
