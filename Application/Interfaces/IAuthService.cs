@@ -1,4 +1,5 @@
 ﻿using Application.DTO_s.AuthenticationDto_s;
+using Application.DTO_s.SupplierDto_s;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
 using Microsoft.AspNetCore.Http;
@@ -17,5 +18,6 @@ namespace Application.Interfaces
 		Task<bool> IsValidRolesIdAsync(string[] RolesId);
 		Task<bool> IsPhoneNumberUniqueAsync(string phoneNumber);
 		Task<bool> VerifySignInCredentialsAsync(string Email, string Password);
+		Task<string> CreateSupplierAsync(CreateSupplierDto dto);
 	}
 }

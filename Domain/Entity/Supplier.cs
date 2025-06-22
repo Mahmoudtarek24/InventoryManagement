@@ -6,17 +6,15 @@ using System.Threading.Tasks;
 
 namespace Domain.Entity
 {
-	public class Supplier 
+	public class Supplier : BaseModel   ///business Entity execute on it
 	{
 		public int SupplierId { get; set; }	
 		public string CompanyName { get; set; }	
-		public string Email { get; set; }	
-		public string PhoneNumber { get; set; } = string.Empty;
 		public string Address { get; set; }
-		public decimal SupplierRating { get; set; }
 		public string? Notes { get; set; }
 		public string? TaxDocumentPath { get; set; }
-		public bool IsVerified { get; set; } 
+		public bool IsVerified { get; set; }
+		public string UserId { get; set; }
 		public ICollection<Product> Products { get; set; }		  
 	}
 }

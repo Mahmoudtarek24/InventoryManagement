@@ -39,7 +39,7 @@ namespace Infrastructure.Repository
 				entity.Remove(item);
 			}
 		}
-		public async Task<IEnumerable<T>> GetAllEntities()
+		public virtual async Task<IEnumerable<T>> GetAllEntities()
 		{
 			return await entity.ToListAsync();
 		}

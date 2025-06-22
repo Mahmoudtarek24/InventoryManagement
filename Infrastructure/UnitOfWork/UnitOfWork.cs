@@ -2,12 +2,7 @@
 using Infrastructure.Context;
 using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+ 
 namespace Infrastructure.UnitOfWork
 {
 	public class UnitOfWork : IUnitOfWork, IDisposable
@@ -16,12 +11,14 @@ namespace Infrastructure.UnitOfWork
 		private IDbContextTransaction? objTrans = null;
 		public ICategoryRepository CategoryRepository {  get; private set; }
 		public IProductRepository ProductRepository { get; private set; }
+		public ISupplierRepository SupplierRepository { get; private set; }
 
 		public UnitOfWork(InventoryManagementDbContext context)
 		{
 			this.context = context;
 			CategoryRepository =new CategoryRepository(context);	
-			ProductRepository =new ProductRepository(context);	
+			ProductRepository =new ProductRepository(context);
+			SupplierRepository =new SupplierRepository(context);	
 		}
 		public async Task BeginTransactionAsync()
 		{

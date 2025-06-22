@@ -13,7 +13,13 @@ namespace Infrastructure.Configurations
 	{
 		public void Configure(EntityTypeBuilder<Supplier> builder)
 		{
-			throw new NotImplementedException();
+			builder.Property(e => e.CompanyName).IsRequired().HasMaxLength(150);
+			builder.Property(e => e.Address).IsRequired().HasMaxLength(250);
+			builder.Property(e => e.Notes).HasMaxLength(10000);
+			builder.Property(e => e.TaxDocumentPath).HasMaxLength(250);
+
+			builder.HasMany(e => e.Products).WithOne(e => e.Supplier).HasForeignKey(e => e.SupplierId);
+
 		}
 	}
 }

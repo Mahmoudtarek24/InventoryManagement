@@ -5,6 +5,7 @@ using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -76,6 +77,19 @@ namespace Infrastructure.Repository
 		{
 			return await context.Products.Include(e=>e.Category)
 				       .Where(e=>e.CategoryId==categoryId && !e.IsDeleted).ToListAsync();
+		}
+
+		public async Task<(int,List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
+		{
+			var query=context.Products.Where(e=>e.SupplierId==supplierId)
+				                                   .AsNoTracking().AsQueryable();	
+
+			var productsCount = await query.CountAsync();	
+			if(productsCount < 20)
+				return (productsCount, query.ToList());
+
+
+			return (productsCount, query.Skip((prodF.PageNumber-1)* prodF.PageSize).Take(prodF.PageSize).ToList());	
 		}
 	}
 }

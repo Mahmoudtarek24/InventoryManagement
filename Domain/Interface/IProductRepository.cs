@@ -16,5 +16,6 @@ namespace Domain.Interface
 		Task<Product?> GetIfExistsAndNotDeletedAsync(int id);
 		Task<(List<Product>, int)> GetProductsWithFiltersAsync(BaseFilter prodF);
 		Task<List<Product>> GetProductsByCategoryAsync(int categoryId);
+		Task<(int, List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF);	
 	}
 }

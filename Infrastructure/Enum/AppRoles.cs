@@ -10,6 +10,7 @@ namespace Infrastructure.Enum
 	{
 		Admin,
 		InventoryManager,
-		SalesViewer
+		SalesViewer,
+		Supplier,
 	}
 }

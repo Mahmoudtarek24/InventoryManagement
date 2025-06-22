@@ -1,5 +1,6 @@
 ﻿using Domain.Entity;
 using Infrastructure.Models;
+using Infrastructure.Views;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -31,5 +32,9 @@ namespace Infrastructure.Context
 		public DbSet<Category> Categories { get; set; }
 		public DbSet<Product> Products { get; set; }
 		public DbSet<ApplicationUser> ApplicationUsers { get; set; }	
+		public DbSet<Supplier> Supplier { get; set; }	
+
+		//Views
+		public DbSet<SupplierProfileView> SupplierProfileView { get; set; }
 	}
 }

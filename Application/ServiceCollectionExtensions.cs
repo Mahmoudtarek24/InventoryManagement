@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Application.Mappings;
 using Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,9 @@ namespace Application
 		{
 			service.AddScoped<ICategoryServices, CategoryServices>();
 			service.AddHttpContextAccessor();
-			service.AddScoped<IProductServices,ProductServices>();
+			service.AddScoped<IProductServices, ProductServices>();
+			service.AddScoped<ISupplierServices, SupplierServices>();
+			service.AddScoped<RoleBasedSupplierMapper>();
 			return service;
 		}
 	}

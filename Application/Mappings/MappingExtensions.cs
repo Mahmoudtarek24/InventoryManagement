@@ -1,5 +1,6 @@
 ﻿using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
+using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Entity;
 using System;
 using System.Collections.Generic;
@@ -64,6 +65,20 @@ namespace Application.Mappings
 				CategoryName = product.Category.Name
 			};
 		}
-		
+		public static SupplierResponseDto ToBasicResponseDto(this Supplier supplier)
+		{
+			if (supplier == null)
+				return null;
+
+			return new SupplierResponseDto()
+			{
+				IsDeleted = supplier.IsDeleted,
+				CompanyName = supplier.CompanyName,
+				CreateOn = supplier.CreateOn,
+				IsVerified = supplier.IsVerified,
+				SupplierId = supplier.SupplierId,
+			};
+		}
+
 	}
 }

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Identity_Models;
+﻿using Domain.Entity;
+using Infrastructure.Identity_Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,6 @@ namespace Infrastructure.Models
 		public DateTime CreateOn { get; set; }
 		public DateTime? LastUpdateOn { get; set; }
 		public ICollection<RefreshToken> RefreshTokens { get; set; }
+		public Supplier Supplier { get; set; }	
 	}
 }

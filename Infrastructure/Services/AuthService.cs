@@ -1,8 +1,10 @@
 ﻿using Application.DTO_s.AuthenticationDto_s;
+using Application.DTO_s.SupplierDto_s;
 using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
 using Azure.Core;
+using Infrastructure.Enum;
 using Infrastructure.Identity_Models;
 using Infrastructure.InternalInterfaces;
 using Infrastructure.Mappings;
@@ -181,6 +183,36 @@ namespace Infrastructure.Services
 			{   //any excption return false only "on calme" 
 				return false;
 			}
+		}
+		public async Task<string> CreateSupplierAsync(CreateSupplierDto dto)
+		{
+			var supplierUser = new ApplicationUser
+			{
+				UserName = dto.UserName,
+				Email = dto.Email,
+				EmailConfirmed = true,
+				PhoneNumber = dto.PhoneNumber,
+				FullName = dto.CompanyName,
+				CreateOn = DateTime.Now,
+				ProfileImage=""
+			};
+			var createResult = await userManager.CreateAsync(supplierUser, dto.Password);
+			if (!createResult.Succeeded)
+			{
+				var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+				throw new Exception();
+				//throw new InternalServerErrorException($"Failed to create user: {errors}");
+			}
+
+			var addRolesResult = await userManager.AddToRoleAsync(supplierUser, $"{AppRoles.Supplier}");
+			if (!addRolesResult.Succeeded)
+			{
+				var roleErrors = string.Join(", ", addRolesResult.Errors.Select(e => e.Description));
+				throw new Exception();
+				//throw new InternalServerErrorException($"User created but failed to assign roles: {roleErrors}");
+			}
+
+			return supplierUser.Id;
 		}
 	}
 }

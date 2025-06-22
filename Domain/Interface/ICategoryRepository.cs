@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Interface
 {
-	public interface ICategoryRepository :IGenaricRepository<Category>
+	public interface ICategoryRepository : IGenaricRepository<Category>
 	{
 		Task<bool> IsCategoryNameUniqueAsync(string name);
 		Task<bool> IsDisplayOrderTakenAsync(int displayOrder);

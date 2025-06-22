@@ -10,6 +10,7 @@ namespace Domain.Interface
 	{
 		ICategoryRepository CategoryRepository { get; }
 		IProductRepository ProductRepository { get; }
+		ISupplierRepository SupplierRepository { get; }	
 		Task BeginTransactionAsync();
 		Task CommitTransaction();
 		Task RollbackTransaction();
