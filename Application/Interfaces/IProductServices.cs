@@ -20,10 +20,14 @@ namespace Application.Interfaces
 		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(ProductQueryParameters productQuery, string route);
 		Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId);
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status);
+		Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(int supplierId, SupplierProductsQueryParameters qP);
+
 		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto); //dint change name if have quentity on stick
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetDeletedProductsWithStockAsync();
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetLowStockProductsAsync(int threshold);
 		//Task<ApiResponse<List<ProductWithWarehouseDto>>> GetProductsByWarehouseAsync(int warehouseId);
+		//Task<ApiResponse<ConfirmationResponseDto>> UpdateProductStockAsync(int id, int newStock);
+
 
 	}
 }

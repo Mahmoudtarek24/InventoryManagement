@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 
 namespace Application.Constants.Enum
 {
-	public enum SuppliersOrdering ///reduce the typo write 
+	public enum ProductOrdering
 	{
-		IsVerified ,
-		ProductCount,
-		PhoneNumber,
-		email,
-		companyname,
-		CreateOn
+		Name,
+		Barcode,
+		Price,
+		IsAvailable
 	}
 }

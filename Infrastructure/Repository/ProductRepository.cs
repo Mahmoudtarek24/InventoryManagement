@@ -1,4 +1,6 @@
-﻿using Domain.Entity;
+﻿using Application.Constants.Enum;
+using Application.DTO_s.ProductDto_s;
+using Domain.Entity;
 using Domain.Interface;
 using Domain.Parameters;
 using Infrastructure.Context;
@@ -90,6 +92,50 @@ namespace Infrastructure.Repository
 
 
 			return (productsCount, query.Skip((prodF.PageNumber-1)* prodF.PageSize).Take(prodF.PageSize).ToList());	
+		}
+		public async Task<(List<Product>, int)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
+		{
+			var query = context.Products
+				.Where(e => !e.IsDeleted && e.SupplierId == supplierId)
+				.AsQueryable();
+
+			// Apply search filter if provided
+			if (!string.IsNullOrEmpty(prodF.searchTearm))
+			{
+				query = query.Where(e =>
+					e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
+					e.Barcode.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase));
+			}
+
+			int totalCount = await query.CountAsync();
+
+			// Apply sorting based on SortOption enum
+			switch (prodF.SortBy.ToLower())
+			{
+				case "name":
+					query = prodF.SortAscending ? query.OrderBy(e => e.Name) : query.OrderByDescending(e => e.Name);
+					break;
+				case "barcode":
+					query = prodF.SortAscending ? query.OrderBy(e => e.Barcode) : query.OrderByDescending(e => e.Barcode);
+					break;
+				case "price":
+					query = prodF.SortAscending ? query.OrderBy(e => e.Price) : query.OrderByDescending(e => e.Price);
+					break;
+				case "isavailable":
+					query = prodF.SortAscending ? query.OrderBy(e => e.IsAvailable) : query.OrderByDescending(e => e.IsAvailable);
+					break;
+				default:
+					// Default sorting by creation date
+					query = prodF.SortAscending ? query.OrderBy(e => e.CreateOn) : query.OrderByDescending(e => e.CreateOn);
+					break;
+			}
+
+			// Apply pagination
+			query = query.Skip((prodF.PageNumber - 1) * prodF.PageSize).Take(prodF.PageSize);
+
+			// Execute query and return results
+			var result = await query.ToListAsync();
+			return (result, totalCount);
 		}
 	}
 }

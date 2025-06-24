@@ -13,6 +13,8 @@ namespace Domain.Interface
 	{
 		Task<bool> IsCompanyNameExistsAsync(string companyName);
 		Task<(int,List<SupplierInfo>)> SupplierWithProductCountAsync(BaseFilter filter);
+		Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null);
+		Task<List<Supplier>> GetSuppliersByVerificationStatusAsync(bool? isVerified = null);
 	}
 }
 

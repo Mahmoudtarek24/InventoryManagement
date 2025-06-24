@@ -19,6 +19,7 @@ namespace Application.ResponseDTO_s
 		Failed,
 		Activated,
 		Deactivated,
-		Updated
+		Updated,
+		upload
 	}
 }

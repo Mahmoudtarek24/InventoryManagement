@@ -83,6 +83,29 @@ namespace Infrastructure.Repository
 		}
 
 
+		public async  Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null)
+		{
+			var query = context.Supplier.Where(s => !s.IsDeleted &&
+													s.CompanyName.Equals(companyName, StringComparison.OrdinalIgnoreCase));
+			if (excludeId.HasValue)
+			{
+				query = query.Where(s => s.SupplierId != excludeId.Value);
+			}
+			return await query.AnyAsync();
+		}
+		public async Task<List<Supplier>> GetSuppliersByVerificationStatusAsync(bool? isVerified = null)
+		{
+			var query = context.Supplier.Where(s => !s.IsDeleted);
+
+			if (isVerified.HasValue)
+			{
+				query = query.Where(s => s.IsVerified == isVerified.Value);
+			}
+			query = query.OrderBy(s => s.CompanyName);
+
+			return await query.ToListAsync();
+		}
+
 		//public async override Task<IEnumerable<Supplier>> GetAllEntities()
 		//{
 		//	return await context.Supplier.Include(e=>e.Products).ToListAsync();

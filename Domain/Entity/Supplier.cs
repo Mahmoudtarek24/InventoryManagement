@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,8 @@ namespace Domain.Entity
 		public string? Notes { get; set; }
 		public string? TaxDocumentPath { get; set; }
 		public bool IsVerified { get; set; }
+		public VerificationStatus VerificationStatus { get; set; }
+		public string? RejectionReason { get; set; }
 		public string UserId { get; set; }
 		public ICollection<Product> Products { get; set; }		  
 	}

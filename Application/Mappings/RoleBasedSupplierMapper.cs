@@ -1,5 +1,6 @@
 ﻿using Application.Constants;
 using Application.DTO_s.SupplierDto_s;
+using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.ProductResponse;
 using Application.ResponseDTO_s.SupplierResponse;
@@ -15,15 +16,19 @@ namespace Application.Mappings
 {
 	public class RoleBasedSupplierMapper
 	{
-		public SupplierResponseDto MapSupplierToResponseDto(Supplier supplier, string[] Roles, ProductPaginationForSupplierQuery qP)
+		private readonly IUserContextService userContextService;
+		public RoleBasedSupplierMapper(IUserContextService userContextService)
 		{
-			var rolesSet=Roles.ToHashSet();
+			this.userContextService = userContextService;
+		}
+		public SupplierResponseDto MapSupplierToResponseDto(Supplier supplier, ProductPaginationForSupplierQuery qP)
+		{
 			var responseDto = supplier.ToBasicResponseDto();
 			var productDto = supplier.Products.Select(e => e.ToResponseDto()).ToList();
 			responseDto.Products =
 				PagedResponse<IEnumerable<ProductBaseRespondDto>>.SimpleResponse(productDto, qP.PageNumber, qP.PageSize, qP.TotalCount);
 
-			if (rolesSet.Contains(AppRoles.Admin) || rolesSet.Contains(AppRoles.Supplier) || rolesSet.Contains(AppRoles.InventoryManager))
+			if (userContextService.IsAdmin || userContextService.IsSupplier || userContextService.IsInventoryManager)
 			{
 				responseDto.TaxDocumentPath = supplier.TaxDocumentPath;
 				responseDto.Address = supplier.Address;
@@ -31,14 +36,14 @@ namespace Application.Mappings
 				responseDto.Notes = supplier.Notes;
 			}
 
-			if (rolesSet.Contains(AppRoles.Admin) || rolesSet.Contains(AppRoles.Supplier))
+			if (userContextService.IsAdmin || userContextService.IsSupplier)
 			{
 				responseDto.UserId = supplier.UserId;
 			}
 			return responseDto;
 		}
 
-		public SupplierListRespondDto MapSuppliedrToResponseDtooo(SupplierInfo supplier, string Role)
+		public SupplierListRespondDto MapToSupplierListDto(SupplierInfo supplier)
 		{
 			var responseDto = new SupplierListRespondDto();
 
@@ -50,13 +55,27 @@ namespace Application.Mappings
 			responseDto.IsVerified = supplier.IsVerified;
 			responseDto.PhoneNumber = supplier.PhoneNumber;
 
-			if (Role==AppRoles.Admin)
+			if (userContextService.IsAdmin)
 			{
 				responseDto.Email = supplier.Email;
-			    responseDto.UserId=supplier.userId;
+				responseDto.UserId = supplier.userId;
 			}
 			return responseDto;
 		}
+
+		public void MapUpdateDtoToSupplier(UpdateSupplierDto dto, Supplier existingSupplier)
+		{
+			existingSupplier.CompanyName = dto.CompanyName;
+			existingSupplier.Address = dto.Address;
+			existingSupplier.LastUpdateOn = DateTime.Now;
+
+			if (userContextService.IsAdmin)
+			{
+				existingSupplier.IsVerified = dto.IsVerified ?? existingSupplier.IsVerified;
+				existingSupplier.Notes = dto.Notes ?? existingSupplier.Notes;
+			}
+		}
+
 	}
 }
 ///i was implement this class to be respond on mapping and let service only handle bussines logic (speration of Concerns)

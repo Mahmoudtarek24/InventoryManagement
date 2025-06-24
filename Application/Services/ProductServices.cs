@@ -191,5 +191,32 @@ namespace Application.Services
 			} while (!await unitOfWork.ProductRepository.IsBarcodeUniqueAsync(barcode));
 			return barcode;
 		}
+
+		public async Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(int supplierId, SupplierProductsQueryParameters qP)
+		{
+			var parameter = new BaseFilter()
+			{
+				PageNumber = qP.PageNumber,
+				PageSize = qP.PageSize,
+				searchTearm = qP.searchTearm,
+				SortAscending = qP.SortAscending,
+				SortBy = qP.SortOption.ToString(),
+			};
+			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(supplierId, parameter);
+
+			var productDtos = products.Select(product => new ProductsBySupplierResponseDto
+			{
+				ProductId = product.Id, // Assuming Id is the ProductId
+				Name = product.Name,
+				Barcode = product.Barcode,
+				Price = product.Price,
+				IsAvailable = product.IsAvailable,
+				CategoryId = product.CategoryId,
+				IsDeleted = product.IsDeleted,
+				CreateOn = product.CreateOn,
+				LastUpdateOn = product.LastUpdateOn,
+			}).ToList();
+			return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos);
+		}
 	}
 }

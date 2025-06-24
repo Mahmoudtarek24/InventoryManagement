@@ -79,6 +79,17 @@ namespace Application.Mappings
 				SupplierId = supplier.SupplierId,
 			};
 		}
-
+		public static SupplierVerificationStatusRespondDto ToResponseDto(this Supplier supplier)
+		{
+			return new SupplierVerificationStatusRespondDto
+			{
+				Address = supplier.Address,
+				CompanyName = supplier.CompanyName,
+				IsVerified = supplier.IsVerified,
+				Reason = supplier.RejectionReason,
+				Status = supplier.VerificationStatus,
+				SupplierId = supplier.SupplierId,
+			};
+		}
 	}
 }

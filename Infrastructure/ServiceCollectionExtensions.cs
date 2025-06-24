@@ -33,6 +33,7 @@ namespace Infrastructure
 			service.AddScoped<IAuthService, AuthService>();
 			service.AddScoped<IRoleService, RoleService>();
 			service.AddScoped<ITokenService,TokenService>();
+			service.AddScoped<IUserContextService, UserContextService>();
 			return service;
 		}
 	}
