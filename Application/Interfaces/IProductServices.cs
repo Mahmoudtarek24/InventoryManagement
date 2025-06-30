@@ -27,7 +27,5 @@ namespace Application.Interfaces
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetLowStockProductsAsync(int threshold);
 		//Task<ApiResponse<List<ProductWithWarehouseDto>>> GetProductsByWarehouseAsync(int warehouseId);
 		//Task<ApiResponse<ConfirmationResponseDto>> UpdateProductStockAsync(int id, int newStock);
-
-
 	}
 }

@@ -12,9 +12,11 @@ namespace Domain.Interface
 	public interface ISupplierRepository : IGenaricRepository<Supplier>
 	{
 		Task<bool> IsCompanyNameExistsAsync(string companyName);
+		Task<bool> IsVerifiedAndActiveSupplierAsync(int supplierId);
 		Task<(int,List<SupplierInfo>)> SupplierWithProductCountAsync(BaseFilter filter);
 		Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null);
 		Task<List<Supplier>> GetSuppliersByVerificationStatusAsync(bool? isVerified = null);
+		Task<Supplier?> GetSupplierByUserIdAsync(string userId);
 	}
 }
 

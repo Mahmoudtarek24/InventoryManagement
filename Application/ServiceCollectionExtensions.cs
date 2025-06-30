@@ -15,6 +15,8 @@ namespace Application
 			service.AddScoped<IProductServices, ProductServices>();
 			service.AddScoped<ISupplierServices, SupplierServices>();
 			service.AddScoped<RoleBasedSupplierMapper>();
+			service.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+			service.AddScoped<RoleBasedPurchaseOrderMapper>();
 			return service;
 		}
 	}

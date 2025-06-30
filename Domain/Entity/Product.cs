@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entity
 {
-	public class Product :BaseModel
+	public class Product :BaseModel  //business entity but on domain take execution on it 
 	{
 		public int ProductId { get; set; }	
 		public string Name { get; set; }	
@@ -16,6 +16,11 @@ namespace Domain.Entity
 		public int CategoryId { get; set; }
 		public Category Category { get; set; }
 		public int SupplierId { get; set; }	
-		public Supplier Supplier { get; set; } 
+		public Supplier Supplier { get; set; }
+		public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+		///price of purchase 
 	}
 }
+
+/// domain entity represent real entity on our business based on it can take execution like add , update ,delete 
+/// domain order to have id but view can not have id  

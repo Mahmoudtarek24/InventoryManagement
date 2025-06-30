@@ -24,6 +24,8 @@ namespace Application.Services
 			this.unitOfWork = unitOfWork;
 			this.uriService = uriService;
 		}
+
+		///  this will convert it to make supplier add product  
 		public async Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto)
 		{
 			bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
@@ -204,19 +206,21 @@ namespace Application.Services
 			};
 			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(supplierId, parameter);
 
-			var productDtos = products.Select(product => new ProductsBySupplierResponseDto
-			{
-				ProductId = product.Id, // Assuming Id is the ProductId
-				Name = product.Name,
-				Barcode = product.Barcode,
-				Price = product.Price,
-				IsAvailable = product.IsAvailable,
-				CategoryId = product.CategoryId,
-				IsDeleted = product.IsDeleted,
-				CreateOn = product.CreateOn,
-				LastUpdateOn = product.LastUpdateOn,
-			}).ToList();
-			return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos);
+			//var productDtos = products.Select(product => new ProductsBySupplierResponseDto
+			//{
+			//	ProductId = product.Id, // Assuming Id is the ProductId
+			//	Name = product.Name,
+			//	Barcode = product.Barcode,
+			//	Price = product.Price,
+			//	IsAvailable = product.IsAvailable,
+			//	CategoryId = product.CategoryId,
+			//	IsDeleted = product.IsDeleted,
+			//	CreateOn = product.CreateOn,
+			//	LastUpdateOn = product.LastUpdateOn,
+			//}).ToList();
+			//return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos);
+
+			return default;
 		}
 	}
 }

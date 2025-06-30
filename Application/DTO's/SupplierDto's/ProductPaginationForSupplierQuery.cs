@@ -19,7 +19,6 @@ namespace Application.DTO_s.SupplierDto_s
 				_pageSize = (value > maxPageSize) ? maxPageSize : value;
 			}
 		}
-
 		public int TotalCount { get; set; } = 0;
 	}
 }

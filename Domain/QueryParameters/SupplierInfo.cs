@@ -23,6 +23,5 @@ namespace Domain.QueryParameters
 		public string userId { get; set; }
 		public bool EmailConfirmed { get; set; }
 		public int ProductCount { get; set; }
-
 	}
 }

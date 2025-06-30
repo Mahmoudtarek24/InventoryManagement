@@ -31,5 +31,14 @@ namespace Application.Interfaces
 		//Task<ApiResponse<int>> CountSuppliersAsync();
 		//Task<ApiResponse<int>> CountVerifiedSuppliersAsync();
 		//Task<ApiResponse<int>> CountSuppliersCreatedThisMonthAsync();
+
+		//////have end point for supplier to detict the order status
+
+
+		////////Very important , we should have like method to get product from supplier ask supplier to enter her product 
+		///to register on system
+		
+		/// can change price 
+
 	}
 }

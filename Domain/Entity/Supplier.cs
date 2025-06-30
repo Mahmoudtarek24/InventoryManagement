@@ -18,7 +18,8 @@ namespace Domain.Entity
 		public VerificationStatus VerificationStatus { get; set; }
 		public string? RejectionReason { get; set; }
 		public string UserId { get; set; }
-		public ICollection<Product> Products { get; set; }		  
+		public ICollection<Product> Products { get; set; }		
+		public ICollection<PurchaseOrder> PurchaseOrders { get; set; }	
 	}
 }
-/////مش هقدر اتعامل معاه لا لما اطب انه يعمل verification
+/////SupplierProduct 

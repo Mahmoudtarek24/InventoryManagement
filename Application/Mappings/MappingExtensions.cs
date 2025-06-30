@@ -1,5 +1,6 @@
 ﻿using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
+using Application.ResponseDTO_s.PurchaseOrder;
 using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Entity;
 using System;
@@ -89,6 +90,19 @@ namespace Application.Mappings
 				Reason = supplier.RejectionReason,
 				Status = supplier.VerificationStatus,
 				SupplierId = supplier.SupplierId,
+			};
+		}
+		public static PurchaseOrderListItemResponseDto ToResponseDto(this PurchaseOrder purchaseOrder)
+		{
+			return new PurchaseOrderListItemResponseDto
+			{
+				ExpectedDeliveryDate = purchaseOrder.ExpectedDeliveryDate,
+				CreatedOn=purchaseOrder.CreateOn,
+				PurchaseOrderId = purchaseOrder.PurchaseOrderId,
+				SupplierName=purchaseOrder.Supplier.CompanyName,
+				TotalCost = purchaseOrder.TotalCost,	
+				Status=purchaseOrder.PurchaseOrderStatus,
+				TotalItems=purchaseOrder.OrderItems.Sum(e=>e.OrderQuantity)
 			};
 		}
 	}

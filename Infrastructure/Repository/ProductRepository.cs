@@ -18,7 +18,6 @@ namespace Infrastructure.Repository
 	{
 		public ProductRepository(InventoryManagementDbContext context) : base(context) { }
 
-
 		public async Task<bool> HasProductsForCategoryAsync(int categoryId) =>
 				await context.Products.AsNoTracking().AnyAsync(e => e.CategoryId == categoryId);
 
@@ -43,8 +42,8 @@ namespace Infrastructure.Repository
 
 
 			if (!string.IsNullOrEmpty(prodF.searchTearm))
-				query = query.Where(e => 
-				      e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
+				query = query.Where(e =>
+					  e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
 					  e.Barcode.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase));
 
 			int totalCount = await query.CountAsync();
@@ -77,23 +76,23 @@ namespace Infrastructure.Repository
 
 		public async Task<List<Product>> GetProductsByCategoryAsync(int categoryId)
 		{
-			return await context.Products.Include(e=>e.Category)
-				       .Where(e=>e.CategoryId==categoryId && !e.IsDeleted).ToListAsync();
+			return await context.Products.Include(e => e.Category)
+					   .Where(e => e.CategoryId == categoryId && !e.IsDeleted).ToListAsync();
 		}
 
-		public async Task<(int,List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
+		public async Task<(int, List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
 		{
-			var query=context.Products.Where(e=>e.SupplierId==supplierId)
-				                                   .AsNoTracking().AsQueryable();	
+			var query = context.Products.Where(e => e.SupplierId == supplierId)
+												   .AsNoTracking().AsQueryable();
 
-			var productsCount = await query.CountAsync();	
-			if(productsCount < 20)
+			var productsCount = await query.CountAsync();
+			if (productsCount < 20)
 				return (productsCount, query.ToList());
 
 
-			return (productsCount, query.Skip((prodF.PageNumber-1)* prodF.PageSize).Take(prodF.PageSize).ToList());	
+			return (productsCount, query.Skip((prodF.PageNumber - 1) * prodF.PageSize).Take(prodF.PageSize).ToList());
 		}
-		public async Task<(List<Product>, int)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
+		public async Task<(List<Product>, int)> GetProductsBySupplierWithFilterAsync(int supplierId, BaseFilter prodF)
 		{
 			var query = context.Products
 				.Where(e => !e.IsDeleted && e.SupplierId == supplierId)
@@ -106,7 +105,7 @@ namespace Infrastructure.Repository
 					e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
 					e.Barcode.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase));
 			}
-
+			///////في كسم حاجه عايز تتصلح
 			int totalCount = await query.CountAsync();
 
 			// Apply sorting based on SortOption enum
@@ -137,6 +136,14 @@ namespace Infrastructure.Repository
 			var result = await query.ToListAsync();
 			return (result, totalCount);
 		}
+
+		public async Task<List<int>> GetProductsBySupplierAsync(int supplierId) =>
+			         await context.Products.Where(e=>e.SupplierId==supplierId).Select(e=>e.ProductId).ToListAsync();
+
+		public async Task<Dictionary<int, decimal>> GetProductPricesAsync(List<int> productIds)=>
+			 await context.Products.AsNoTracking().Where(e=> productIds.Contains(e.ProductId))
+			                  .ToDictionaryAsync(e=>e.ProductId, e=>e.Price);	
+
 	}
 }
 

@@ -20,6 +20,7 @@ namespace Application.ResponseDTO_s
 		Activated,
 		Deactivated,
 		Updated,
-		upload
+		upload,
+		Cancelled,
 	}
 }

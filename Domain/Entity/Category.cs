@@ -18,4 +18,4 @@ namespace Domain.Entity
 ///domain entity =>represent (كيان حقيقي) on our business mean we can add it ,modify take action based on her value 
 ///view  dint but on domain , becouse it used only for retrive data ,not represent real entity 
 ///domain should have id , but view can dint have id 
-///domin only for read "dint have her behaviour" , entity execute update,delete ,create
+///view  only for read "dint have her behaviour" , entity execute update,delete ,create

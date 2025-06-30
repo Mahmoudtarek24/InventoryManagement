@@ -12,13 +12,17 @@ namespace Infrastructure.UnitOfWork
 		public ICategoryRepository CategoryRepository {  get; private set; }
 		public IProductRepository ProductRepository { get; private set; }
 		public ISupplierRepository SupplierRepository { get; private set; }
+		public IPurchaseOrderItemRepository PurchaseOrderItemRepository { get; private set; }
+		public IPurchaseOrderRepository PurchaseOrderRepository { get; private set; }
 
 		public UnitOfWork(InventoryManagementDbContext context)
 		{
 			this.context = context;
 			CategoryRepository =new CategoryRepository(context);	
 			ProductRepository =new ProductRepository(context);
-			SupplierRepository =new SupplierRepository(context);	
+			SupplierRepository =new SupplierRepository(context);
+			PurchaseOrderItemRepository=new PurchaseOrderItemRepository(context);
+			PurchaseOrderRepository=new PurchaseOrderRepository(context);	
 		}
 		public async Task BeginTransactionAsync()
 		{

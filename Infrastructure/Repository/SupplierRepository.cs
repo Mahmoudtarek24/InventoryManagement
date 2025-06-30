@@ -106,6 +106,14 @@ namespace Infrastructure.Repository
 			return await query.ToListAsync();
 		}
 
+		public async Task<bool> IsVerifiedAndActiveSupplierAsync(int supplierId) =>
+			    await context.Supplier.AnyAsync(e=>e.SupplierId==supplierId&&!e.IsDeleted&&e.IsVerified);
+
+		public async Task<Supplier?> GetSupplierByUserIdAsync(string userId) =>
+			await  context.Set<Supplier>().AsNoTracking()
+		                     .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsDeleted);
+
+
 		//public async override Task<IEnumerable<Supplier>> GetAllEntities()
 		//{
 		//	return await context.Supplier.Include(e=>e.Products).ToListAsync();

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Application.ResponseDTO_s.SupplierResponse
 {
 	public class SupplierBaseResponsDto
-	{
+	{ 
 		public int SupplierId { get; set; }
 		public string CompanyName { get; set; }
 		public string Address { get; set; }

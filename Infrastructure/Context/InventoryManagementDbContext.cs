@@ -21,11 +21,17 @@ namespace Infrastructure.Context
 			(
 				typeof(InventoryManagementDbContext).Assembly
 			);
-			
+			var cascadeFk = modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys())
+								   .Where(e => e.DeleteBehavior == DeleteBehavior.Cascade);
+			foreach (var fk in cascadeFk)
+			{
+				fk.DeleteBehavior = DeleteBehavior.Restrict;
+			}
 			base.OnModelCreating(modelBuilder);
 		}
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
+				
 			base.OnConfiguring(optionsBuilder);
 		}
 		 
@@ -33,6 +39,8 @@ namespace Infrastructure.Context
 		public DbSet<Product> Products { get; set; }
 		public DbSet<ApplicationUser> ApplicationUsers { get; set; }	
 		public DbSet<Supplier> Supplier { get; set; }	
+		public DbSet<PurchaseOrder> PurchaseOrders { get; set; }	
+		public DbSet<PurchaseOrderItem> PurchaseOrderItems{ get; set; }	
 
 		//Views
 		public DbSet<SupplierProfileView> SupplierProfileView { get; set; }
