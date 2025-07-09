@@ -70,6 +70,10 @@ namespace Infrastructure.Repository
 
 			return (totalCount, result);
 		}
+		public async Task<List<PurchaseOrder>> GetPurchaseOrdersBySupplierAsync(int supplierId) =>
+			      await context.PurchaseOrders.AsNoTracking().Include(po => po.OrderItems)
+							   .Where(po => po.SupplierId == supplierId && !po.IsDeleted)
+							   .OrderByDescending(po => po.CreateOn).ToListAsync();
 
 	}
 }

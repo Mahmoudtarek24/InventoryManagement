@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace Application.DTO_s
 {
-	public class BaseQueryParameters
+	public class BaseQueryParameters 
 	{
 		const int maxPageSize = 30;
 		private int _pageSize = 10;
-		public string searchTearm { get; set; }
+		public string? searchTearm { get; set; }
+		public string? SortBy { get; set; }
 		public bool SortAscending { get; set; } = true;
 		public int PageNumber { get; set; } = 1;
 		public int PageSize
@@ -21,6 +22,5 @@ namespace Application.DTO_s
 				_pageSize = (value > maxPageSize) ? maxPageSize : value;
 			}
 		}
-		public int TotalCount { get; set; }	
 	}
 }

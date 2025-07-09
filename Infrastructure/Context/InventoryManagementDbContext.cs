@@ -25,7 +25,7 @@ namespace Infrastructure.Context
 								   .Where(e => e.DeleteBehavior == DeleteBehavior.Cascade);
 			foreach (var fk in cascadeFk)
 			{
-				fk.DeleteBehavior = DeleteBehavior.Restrict;
+				fk.DeleteBehavior = DeleteBehavior.Restrict; 
 			}
 			base.OnModelCreating(modelBuilder);
 		}
@@ -41,6 +41,9 @@ namespace Infrastructure.Context
 		public DbSet<Supplier> Supplier { get; set; }	
 		public DbSet<PurchaseOrder> PurchaseOrders { get; set; }	
 		public DbSet<PurchaseOrderItem> PurchaseOrderItems{ get; set; }	
+		public DbSet<Warehouse> Warehouses { get; set; }
+		public DbSet<Inventory> Inventories { get; set; }
+		public DbSet<StockMovement> StockMovements { get; set; }
 
 		//Views
 		public DbSet<SupplierProfileView> SupplierProfileView { get; set; }

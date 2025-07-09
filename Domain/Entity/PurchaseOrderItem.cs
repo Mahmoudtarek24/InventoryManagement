@@ -16,7 +16,5 @@ namespace Domain.Entity
 		public int ReceivedQuantity { get; set; }	=0;	
 		public int PurchaseOrderId { get; set; }	
 		public PurchaseOrder PurchaseOrder { get; set; }
-
-		////relation with Warehouse this Purchase Order where will arrive
  	}
 }

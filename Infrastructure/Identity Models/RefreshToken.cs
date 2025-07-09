@@ -17,6 +17,5 @@ namespace Infrastructure.Identity_Models
 		public string CreatedByIp { get; set; }
 		public bool IsActive =>Revoked is null&& !IsExpired ;
 		public bool IsExpired =>DateTime.UtcNow >= Expires;	
-
 	}
 }

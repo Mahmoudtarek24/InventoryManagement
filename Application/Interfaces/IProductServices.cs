@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Application.ResponseDTO_s.CategoryResponse;
 using Application.DTO_s.CategoryDto_s;
+using Application.ResponseDTO_s.PurchaseOrder;
+using Application.DTO_s;
 
 namespace Application.Interfaces
 {
@@ -17,15 +19,15 @@ namespace Application.Interfaces
 		Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos);
 		Task<ApiResponse<ProductResponseDto>> GetProductByIdAsync(int id);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteProductAsync(int id);
-		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(ProductQueryParameters productQuery, string route);
+		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(BaseQueryParameters productQuery);
 		Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId);
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status);
 		Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(int supplierId, SupplierProductsQueryParameters qP);
 
 		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto); //dint change name if have quentity on stick
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetDeletedProductsWithStockAsync();
-		//Task<ApiResponse<List<ProductStockAlertDto>>> GetLowStockProductsAsync(int threshold);
-		//Task<ApiResponse<List<ProductWithWarehouseDto>>> GetProductsByWarehouseAsync(int warehouseId);
-		//Task<ApiResponse<ConfirmationResponseDto>> UpdateProductStockAsync(int id, int newStock);
+		 Task<ApiResponse<List<PurchaseHistoryProductResponseDto>>> GetProductPurchaseHistoryAsync(int productId); //on report controller 
+		
+
 	}
 }

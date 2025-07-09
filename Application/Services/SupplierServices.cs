@@ -20,6 +20,7 @@ using Application.Constants.Enum;
 using System.Data;
 using Domain.Enum;
 using Microsoft.AspNetCore.Http;
+using Application.ResponseDTO_s.PurchaseOrder;
 
 namespace Application.Services
 {
@@ -28,11 +29,13 @@ namespace Application.Services
 		private readonly IUnitOfWork unitOfWork;
 		private readonly IAuthService authService;
 		private readonly RoleBasedSupplierMapper mapper;
+		private readonly RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper;
 		private readonly IUriService uriService;
 		private readonly IUserContextService userContextService;
-		private readonly IImageStorageService imageStorageService;	
+		private readonly IImageStorageService imageStorageService;
 		public SupplierServices(IUnitOfWork unitOfWork, IAuthService authService, RoleBasedSupplierMapper mapper
-							   , IUriService uriService, IUserContextService userContextService, IImageStorageService imageStorageService)
+							   , IUriService uriService, IUserContextService userContextService
+				   , IImageStorageService imageStorageService, RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper)
 		{
 			this.unitOfWork = unitOfWork;
 			this.authService = authService;
@@ -40,6 +43,7 @@ namespace Application.Services
 			this.uriService = uriService;
 			this.userContextService = userContextService;
 			this.imageStorageService = imageStorageService;
+			this.roleBasedPurchaseOrderMapper = roleBasedPurchaseOrderMapper;
 		}
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreateSupplierAsync(CreateSupplierDto dto)
 		{
@@ -108,33 +112,38 @@ namespace Application.Services
 			{
 				PageNumber = qP.PageNumber,
 				PageSize = qP.PageSize,
-				searchTearm = qP.searchTearm,
+				searchTearm = qP.searchTearm?.ToLower(),
 				SortAscending = qP.SortAscending,
-				SortBy = qP.SortBy.ToString(),
+				SortBy = qP.SortOption.ToString(),
 			};
 			var (totalCount, suppliers) = await unitOfWork.SupplierRepository.SupplierWithProductCountAsync(Filter);
 
-			qP.totalCount = totalCount;
+			if (totalCount == 0)
+				return PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(new List<SupplierListRespondDto>(),
+					qP.PageNumber
+					,qP.PageSize,
+					totalCount,
+					"No suppliers found matching the search criteria.");
 
 			var supplierDtos = suppliers.Select(e => mapper.MapToSupplierListDto(e)).ToList();
 
-			var pagedResponse = PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(supplierDtos, qP.PageSize, qP.PageSize, qP.totalCount);
+			var pagedResponse = PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(supplierDtos, qP.PageSize, qP.PageSize, totalCount);
 			return pagedResponse;
 		}
 
-		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(int id, UpdateSupplierDto dto)
+		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(string id, UpdateSupplierDto dto)
 		{
-			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(id);
+			var existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(id);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
 				throw new Exception();
 			// throw new NotFoundException($"Supplier with ID '{id}' not found.");
 
-			bool companyNameExists = await unitOfWork.SupplierRepository.IsCompanyNameExistsAsync(dto.CompanyName, id);
+			bool companyNameExists = await unitOfWork.SupplierRepository.IsCompanyNameExistsAsync(dto.CompanyName, existingSupplier.SupplierId);
 			if (companyNameExists)
 				throw new Exception();
 			// throw new ConflictException($"Supplier with company name '{dto.CompanyName}' already exists.");
 
-			mapper.MapUpdateDtoToSupplier(dto, existingSupplier);	
+			mapper.MapUpdateDtoToSupplier(dto, existingSupplier);
 			await unitOfWork.BeginTransactionAsync();
 			await unitOfWork.CommitTransaction();
 
@@ -152,27 +161,27 @@ namespace Application.Services
 				throw new Exception();
 			// throw new UnauthorizedException("Only administrators can verify suppliers.");
 
-			
+
 			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(dto.SupplierId);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
 				throw new Exception();
 			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
 
 			if (existingSupplier.VerificationStatus == dto.newStatus)
-				return ApiResponse<ConfirmationResponseDto>.Failuer(400,"Supplier already has this verification status.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(400, "Supplier already has this verification status.");
 
 
 			existingSupplier.VerificationStatus = dto.newStatus;
 			existingSupplier.LastUpdateOn = DateTime.Now;
 
-			if(dto.newStatus == VerificationStatus.Verified)
+			if (dto.newStatus == VerificationStatus.Verified)
 			{
 				existingSupplier.IsVerified = true;
 			}
-			if(dto.newStatus == VerificationStatus.Rejected)
+			if (dto.newStatus == VerificationStatus.Rejected)
 			{
-				existingSupplier.IsVerified = false;	
-				existingSupplier.RejectionReason=dto.RejectionReason;	
+				existingSupplier.IsVerified = false;
+				existingSupplier.RejectionReason = dto.RejectionReason;
 			}
 
 			await unitOfWork.BeginTransactionAsync();
@@ -196,7 +205,7 @@ namespace Application.Services
 			var responseDto = new SupplierVerificationStatusBaseRespondDto
 			{
 				Status = existingSupplier.VerificationStatus,
-				Reason = existingSupplier.RejectionReason 
+				Reason = existingSupplier.RejectionReason
 			};
 			return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Success(responseDto, 200, "Verification status retrieved successfully");
 		}
@@ -205,8 +214,8 @@ namespace Application.Services
 		{
 			var suppliers = await unitOfWork.SupplierRepository.GetSuppliersByVerificationStatusAsync(isVerified);
 
-			var responseDtos = suppliers.Select(e=>e.ToResponseDto()).ToList();
-			var message = isVerified switch 
+			var responseDtos = suppliers.Select(e => e.ToResponseDto()).ToList();
+			var message = isVerified switch
 			{
 				true => "Verified suppliers retrieved successfully",
 				false => "Unverified suppliers retrieved successfully",
@@ -215,7 +224,7 @@ namespace Application.Services
 			return ApiResponse<List<SupplierVerificationStatusRespondDto>>.Success(responseDtos, 200, message);
 		}
 
-		public async Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(int supplierId ,IFormFile file)
+		public async Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(int supplierId, IFormFile file)
 		{
 			////on controller i will check from userId is supplier
 			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(supplierId);
@@ -246,6 +255,88 @@ namespace Application.Services
 				status = ConfirmationStatus.upload
 			};
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
+		}
+
+		public async Task<ApiResponse<PurchaseOrderDetailsResponseDto>> SimulateSupplierReceivingAsync(int purchaseOrderId)
+		{
+			var purchaseOrder = await unitOfWork.PurchaseOrderRepository
+												.GetPurchaseOrderWithItemsAndSupplierAsync(purchaseOrderId);
+			if (purchaseOrder == null || purchaseOrder.IsDeleted)
+				throw new Exception("Purchase order not found.");
+
+			var allowedStatuses = new[] {
+						PurchaseOrderStatus.Sent,
+						PurchaseOrderStatus.PartiallyReceived,
+			};
+
+			if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
+				return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(new PurchaseOrderDetailsResponseDto(), 200
+					, "Purchase order status doesn't allow receiving simulation.");
+
+			Random rnd = new Random();
+			foreach (var item in purchaseOrder.OrderItems.Where(e => e.ReceivedQuantity < e.OrderQuantity))
+				item.ReceivedQuantity = SimulateItemReceiving(item, rnd);
+
+			UpdatePurchaseOrderStatus(purchaseOrder);
+			await unitOfWork.BeginTransactionAsync();
+			await unitOfWork.CommitTransaction();
+
+			var response = roleBasedPurchaseOrderMapper.MapToPurchaseOrderDetailsDtoAsync(purchaseOrder);
+			return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(response, 200);
+		}
+		private int SimulateItemReceiving(PurchaseOrderItem item, Random random)
+		{
+			var remainingQuantity = item.OrderQuantity - item.ReceivedQuantity;
+			var chance = random.Next(1, 101);
+
+			return chance switch
+			{
+				<= 85 => item.OrderQuantity,
+				<= 95 => item.ReceivedQuantity + random.Next(1, remainingQuantity + 1),
+				_ => item.ReceivedQuantity,
+			};
+		}
+		private void UpdatePurchaseOrderStatus(PurchaseOrder purchaseOrder)
+		{
+			var isFullyReceived = purchaseOrder.OrderItems.All(e => e.OrderQuantity == e.ReceivedQuantity);
+
+			purchaseOrder.PurchaseOrderStatus = isFullyReceived switch
+			{
+				true => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.Received,
+				false => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.PartiallyReceived,
+			};
+			purchaseOrder.LastUpdateOn = DateTime.Now;
+		}
+
+		public async Task SendProductsToWarehouse(PurchaseOrder purchaseOrder)
+		{
+			var warehouse = await unitOfWork.WarehouseRepository.GetByIdAsync(purchaseOrder.WarehouseId);
+
+			if (warehouse == null)
+				throw new Exception();
+			///throw new NotFoundException("Warehouse not found");
+
+			foreach (var item in purchaseOrder.OrderItems)
+			{
+				if (item.ReceivedQuantity == 0)
+					continue;
+
+				var existingInventory = warehouse.Inventories.FirstOrDefault(i => i.ProductId == item.ProductId);
+
+				if (existingInventory != null)
+					existingInventory.QuantityInStock += item.ReceivedQuantity;
+				else
+				{
+					var newInventory = new Inventory
+					{
+						ProductId = item.ProductId,
+						QuantityInStock = item.ReceivedQuantity,
+						WarehouseId = warehouse.WarehouseId
+					};
+
+					await unitOfWork.InventoryRepository.AddAsync(newInventory);
+				}
+			}
 		}
 	}
 }

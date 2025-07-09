@@ -15,6 +15,8 @@ namespace Domain.Entity
 		public int SupplierId { get; set; }
 		public Supplier Supplier { get; set; }
 		public PurchaseOrderStatus PurchaseOrderStatus { get; set; }
-		public ICollection<PurchaseOrderItem> OrderItems { get; set; }	
+		public ICollection<PurchaseOrderItem> OrderItems { get; set; }
+		public int WarehouseId { get; set; }
+		public Warehouse Warehouse { get; set; }	
 	}
 }

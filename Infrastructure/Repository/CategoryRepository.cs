@@ -15,7 +15,6 @@ namespace Infrastructure.Repository
 	public class CategoryRepository : GenaricRepository<Category>, ICategoryRepository
 	{
 		public CategoryRepository(InventoryManagementDbContext context) : base(context) { }
-
 		public async Task<bool> IsCategoryNameUniqueAsync(string name) =>
 			await context.Categories.AsNoTracking()
 				.AnyAsync(p => p.Name.ToLower() == name.ToLower());
@@ -38,7 +37,7 @@ namespace Infrastructure.Repository
 			var query = context.Categories.Where(e => !e.IsDeleted).AsQueryable();
 
 			if (!string.IsNullOrEmpty(catF.searchTearm))
-				query = query.Where(e => e.Name.Contains(catF.searchTearm, StringComparison.OrdinalIgnoreCase));
+				query = query.Where(e => e.Name.ToLower().Contains(catF.searchTearm.ToLower()));
 
 			int totalCount = await query.CountAsync();
 

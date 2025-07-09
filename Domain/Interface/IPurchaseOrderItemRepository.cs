@@ -9,5 +9,6 @@ namespace Domain.Interface
 {
 	public interface IPurchaseOrderItemRepository :IGenaricRepository<PurchaseOrderItem>
 	{
+		Task<List<PurchaseOrderItem>> GetPurchaseHistoryByProductIdAsync(int productId);
 	}
 }

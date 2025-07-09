@@ -65,17 +65,49 @@ namespace Application.Mappings
 
 		public void MapUpdateDtoToSupplier(UpdateSupplierDto dto, Supplier existingSupplier)
 		{
-			existingSupplier.CompanyName = dto.CompanyName;
-			existingSupplier.Address = dto.Address;
-			existingSupplier.LastUpdateOn = DateTime.Now;
-
+			if (userContextService.IsSupplier)
+			{
+				existingSupplier.CompanyName = dto.CompanyName;
+				existingSupplier.Address = dto.Address;
+			}
 			if (userContextService.IsAdmin)
 			{
 				existingSupplier.IsVerified = dto.IsVerified ?? existingSupplier.IsVerified;
 				existingSupplier.Notes = dto.Notes ?? existingSupplier.Notes;
 			}
-		}
+			existingSupplier.LastUpdateOn = DateTime.Now;
 
+		}
+		public ProductsBySupplierResponseDto MapProductToSupplierResponseDto(Product product)
+		{
+			var responseDto = new ProductsBySupplierResponseDto();
+
+			// Basic product information always available
+			responseDto.ProductId = product.ProductId;
+			responseDto.Name = product.Name;
+			responseDto.Price = product.Price;
+			responseDto.CategoryId = product.CategoryId;
+			responseDto.CreateOn = product.CreateOn;
+
+			// Supplier basic information always available
+			responseDto.SupplierId = product.Supplier.SupplierId;
+			responseDto.CompanyName = product.Supplier.CompanyName;
+			responseDto.Address = product.Supplier.Address;
+			responseDto.IsVerified = product.Supplier.IsVerified;
+			responseDto.VerificationStatus = product.Supplier.VerificationStatus;
+
+			// Role-based additional information
+			if (userContextService.IsAdmin || userContextService.IsInventoryManager)
+			{
+				responseDto.Barcode = product.Barcode;
+				responseDto.IsAvailable = product.IsAvailable;
+				responseDto.IsDeleted = product.IsDeleted;
+				responseDto.LastUpdateOn = product.LastUpdateOn;
+				responseDto.Notes = product.Supplier.Notes;
+			}
+
+			return responseDto;
+		}
 	}
 }
 ///i was implement this class to be respond on mapping and let service only handle bussines logic (speration of Concerns)

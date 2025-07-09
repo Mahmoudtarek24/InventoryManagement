@@ -1,4 +1,5 @@
-﻿using Application.DTO_s;
+﻿using Application.Constants.Enum;
+using Application.DTO_s;
 using Application.DTO_s.CategoryDto_s;
 using Application.Interfaces;
 using Application.Mappings;
@@ -24,10 +25,13 @@ namespace Application.Services
 		
 		public async Task<ApiResponse<CategoryResponseDto>> CreateCategoryAsync(CreateCategoryDto dto)
 		{
+			var validationErrors = new Dictionary<string, string[]>();
 			bool nameExists = await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(dto.Name);
-			if (!nameExists)
-				throw new Exception();
-			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
+			if (nameExists)
+			{
+				validationErrors.Add("Name",new[] { "Category with name '{dto.Name}' already exists." });
+				return ApiResponse<CategoryResponseDto>.ValidationError(validationErrors);	
+			}
 
 			var category = new Category
 			{
@@ -52,7 +56,7 @@ namespace Application.Services
 			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
 
 			bool nameExists = await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(dto.Name);
-			if (!nameExists)
+			if (nameExists)
 				throw new Exception();
 			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
 
@@ -81,32 +85,33 @@ namespace Application.Services
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteCategoryAsync(int id)
 		{
-			var category = await unitOfWork.CategoryRepository.GetIfExistsAndNotDeletedAsync(id);
-			if (category == null)
+			var category = await unitOfWork.CategoryRepository.GetByIdAsync(id);
+			if (category is null)
 				throw new Exception();
 			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
 
 			var hasProducts = await unitOfWork.ProductRepository.HasProductsForCategoryAsync(id);
-			if (!hasProducts)
+			if (hasProducts)
 				throw new Exception();
 			//throw throw new ConflictException($"Cannot delete category with ID {id} because it has related products.");
 
 
 			await unitOfWork.BeginTransactionAsync();
-			category.LastUpdateOn=DateTime.Now;
+			category.LastUpdateOn = DateTime.Now;
 			category.IsDeleted = !category.IsDeleted;
 			await unitOfWork.CommitTransaction();
 
+			var action = category.IsDeleted ? "soft-deleted" : "restored";
 			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
 			{
-				Message = $"Category with ID {category.CategoryId} was marked as deleted.",
+				Message = $"Category with ID {category.CategoryId} was {action} successfully.",
 				status = ConfirmationStatus.SoftDeleted
 			};
 
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(CategoryQueryParameters categoryQuery,string route)
+		public async Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(BaseQueryParameters categoryQuery,string route)
 		{
 			var parameter = new BaseFilter()
 			{

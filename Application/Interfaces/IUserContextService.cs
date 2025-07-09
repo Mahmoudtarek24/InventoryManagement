@@ -10,9 +10,11 @@ namespace Application.Interfaces
 	{
 		string[] Roles { get; }
 		string userId { get; }	
+		string Route { get; }	
 		bool IsAdmin { get; }	
 		bool IsInventoryManager { get;}
 		bool IsSalesViewer { get; }
 		bool IsSupplier { get; }
+		void SetUser(string[] Roles, string userId,string route);
 	}
 }

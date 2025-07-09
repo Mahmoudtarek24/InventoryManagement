@@ -25,7 +25,7 @@ namespace Infrastructure.Repository
 			 await context.Products.AsNoTracking().AnyAsync(e => e.Name == productName && e.CategoryId == categoryId);
 
 		public async Task<bool> IsBarcodeUniqueAsync(string barcode) =>
-			await context.Products.AnyAsync(e => e.Barcode == barcode);
+			!await context.Products.AnyAsync(e => e.Barcode == barcode);
 
 		public async Task<Product?> GetIfExistsAndNotDeletedAsync(int id) =>
 				 await context.Products.Where(e => e.ProductId == id)
@@ -82,7 +82,7 @@ namespace Infrastructure.Repository
 
 		public async Task<(int, List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF)
 		{
-			var query = context.Products.Where(e => e.SupplierId == supplierId)
+			var query = context.Products.Where(e => e.SupplierId == supplierId).Include(e=>e.Supplier)
 												   .AsNoTracking().AsQueryable();
 
 			var productsCount = await query.CountAsync();

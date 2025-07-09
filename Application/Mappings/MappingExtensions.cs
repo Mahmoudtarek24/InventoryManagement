@@ -1,8 +1,10 @@
 ﻿using Application.ResponseDTO_s.CategoryResponse;
+using Application.ResponseDTO_s.InventoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
 using Application.ResponseDTO_s.PurchaseOrder;
 using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Entity;
+using Domain.QueryParameters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,15 +38,15 @@ namespace Application.Mappings
 
 			return new ProductResponseDto()
 			{
-				CategoryId= product.CategoryId,	
-				CreateOn= product.CreateOn,
+				CategoryId = product.CategoryId,
+				CreateOn = product.CreateOn,
 				Barcode = product.Barcode,
-				IsAvailable = product.IsAvailable,	
-				IsDeleted= product.IsDeleted,
-				LastUpdateOn= product.LastUpdateOn,
-				Name= product.Name,
+				IsAvailable = product.IsAvailable,
+				IsDeleted = product.IsDeleted,
+				LastUpdateOn = product.LastUpdateOn,
+				Name = product.Name,
 				Price = product.Price,
-				ProductId= product.ProductId,
+				ProductId = product.ProductId,
 			};
 		}
 		public static ProductWithCategoryRespondDto ToResponseDtoWithCategory(this Product product)
@@ -82,6 +84,9 @@ namespace Application.Mappings
 		}
 		public static SupplierVerificationStatusRespondDto ToResponseDto(this Supplier supplier)
 		{
+			if (supplier == null)
+				return null;
+
 			return new SupplierVerificationStatusRespondDto
 			{
 				Address = supplier.Address,
@@ -94,15 +99,58 @@ namespace Application.Mappings
 		}
 		public static PurchaseOrderListItemResponseDto ToResponseDto(this PurchaseOrder purchaseOrder)
 		{
+			if (purchaseOrder == null)
+				return null;
+
 			return new PurchaseOrderListItemResponseDto
 			{
 				ExpectedDeliveryDate = purchaseOrder.ExpectedDeliveryDate,
-				CreatedOn=purchaseOrder.CreateOn,
+				CreatedOn = purchaseOrder.CreateOn,
 				PurchaseOrderId = purchaseOrder.PurchaseOrderId,
-				SupplierName=purchaseOrder.Supplier.CompanyName,
-				TotalCost = purchaseOrder.TotalCost,	
-				Status=purchaseOrder.PurchaseOrderStatus,
-				TotalItems=purchaseOrder.OrderItems.Sum(e=>e.OrderQuantity)
+				SupplierName = purchaseOrder.Supplier.CompanyName,
+				TotalCost = purchaseOrder.TotalCost,
+				Status = purchaseOrder.PurchaseOrderStatus,
+				TotalItems = purchaseOrder.OrderItems.Sum(e => e.OrderQuantity)
+			};
+		}
+		public static PurchaseHistoryProductResponseDto ToResponseDto(this PurchaseOrderItem item)
+		{
+			if (item == null)
+				return null;
+
+			return new PurchaseHistoryProductResponseDto
+			{
+				PurchaseOrderId = item.PurchaseOrderId,
+				OrderDate = item.PurchaseOrder.CreateOn,
+				SupplierName = item.PurchaseOrder.Supplier.CompanyName,
+				UnitPrice = item.UnitPrice,
+				OrderQuantity = item.OrderQuantity,
+				ReceivedQuantity = item.ReceivedQuantity,
+				Status = item.PurchaseOrder.PurchaseOrderStatus
+
+			};
+		}
+		public static InventoryResponseDto ToResponseDto(this InventoryInfo inventory)
+		{
+			return new InventoryResponseDto
+			{
+				InventoryId = inventory.InventoryId,
+				ProductId = inventory.ProductId,
+				ProductName = inventory.ProductName,
+				QuantityInStock = inventory.QuantityInStock,
+				WarehouseId = inventory.WarehouseId,
+				SerialNumber = inventory.SerialNumber,
+			};
+		}
+		public static LowStockAlertDto ToLowStockAlertDto(this InventoryInfo inventory)
+		{
+			return new LowStockAlertDto
+			{
+				ProductId = inventory.ProductId,
+				ProductName = inventory.ProductName,
+				QuantityInStock = inventory.QuantityInStock,
+				WarehouseId = inventory.WarehouseId,
+				SerialNumber = inventory.SerialNumber,
 			};
 		}
 	}

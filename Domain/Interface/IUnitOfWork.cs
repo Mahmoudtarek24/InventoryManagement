@@ -12,7 +12,10 @@ namespace Domain.Interface
 		IProductRepository ProductRepository { get; }
 		ISupplierRepository SupplierRepository { get; }
 		IPurchaseOrderItemRepository PurchaseOrderItemRepository { get; }
-		IPurchaseOrderRepository PurchaseOrderRepository { get; }	
+		IPurchaseOrderRepository PurchaseOrderRepository { get; }
+		IWarehouseRepository WarehouseRepository { get; }
+		IInventoryRepository InventoryRepository { get; }
+		IStockMovementRepository StockMovementRepository { get; }	
 		Task BeginTransactionAsync();
 		Task CommitTransaction();
 		Task RollbackTransaction();

@@ -18,6 +18,8 @@ namespace Application.Interfaces
 		Task<ApiResponse<ConfirmationResponseDto>> UpdateDraftPurchaseOrderAsync(UpdatePurchaseOrderDto dto);
 		Task<ApiResponse<PurchaseOrderDetailsResponseDto>> GetPurchaseorderByIdAsync(int purchaseId);
 		Task<PagedResponse<List<PurchaseOrderListItemResponseDto>>> GetPurchaseOrdersWithPaginationAsync(PurchaseOrderQueryParameter orderQP, string route);
-		Task<PagedResponse<List<PurchaseOrderListItemResponseDto>>> GetAllDraftPurchaseOrdersAsync(BaseQueryParameters queryParameters);
+		Task<List<PurchaseOrderBySupplierResponseDto>> GetOrdersBySupplierAsync(int supplierId); 
+		///will put it on supplier controller amd will get supplierId from token will not ask for it 
+		/// also but on Purchase Order controller and will ask for supplier id
 	}
 }

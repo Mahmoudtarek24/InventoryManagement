@@ -8,8 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
   </ItemGroup>
@@ -19,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Exceptions\" />
+    <Folder Include="DTO%27s\InventoryDto%27s\" />
+    <Folder Include="ResponseDTO%27s\StockMovementResponse\" />
   </ItemGroup>
 
 </Project>

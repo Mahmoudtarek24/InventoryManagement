@@ -16,7 +16,7 @@ namespace Application.Interfaces
 		Task<ApiResponse<CategoryResponseDto>> UpdateCategoryAsync(int id, UpdateCategoryDto dto);
 		Task<ApiResponse<CategoryResponseDto>> GetCategoryByIdAsync(int id);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteCategoryAsync(int id);
-		Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(CategoryQueryParameters categoryQuery,string route);
+		Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(BaseQueryParameters categoryQuery,string route);
 		Task<ApiResponse<List<CategoryResponseDto>>> GetAllCategoryAsync();
 	}
 }

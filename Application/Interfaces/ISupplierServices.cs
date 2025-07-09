@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Enum;
 using Microsoft.AspNetCore.Http;
+using Application.ResponseDTO_s.PurchaseOrder; 
 
 namespace Application.Interfaces
 {
@@ -16,7 +17,7 @@ namespace Application.Interfaces
 		Task<ApiResponse<ConfirmationResponseDto>> CreateSupplierAsync(CreateSupplierDto dto);
 		Task<ApiResponse<SupplierResponseDto>> GetSupplierByIdAsync(int id, ProductPaginationForSupplierQuery queryParamter);
 		Task<PagedResponse<List<SupplierListRespondDto>>> GetPaginatedSuppliersAsync(SupplierQueryParameters qP);
-		Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(int id, UpdateSupplierDto dto);
+		Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(string id, UpdateSupplierDto dto);
 		//Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteCategoryAsync(int id);
 
 		// verification 
@@ -27,18 +28,18 @@ namespace Application.Interfaces
 		//TaxDocument
 		Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(int id,IFormFile file);
 
-		///Task<ApiResponse<supplier>> reated-this-mont(int id,IFormFile file);
+		///Task<ApiResponse<supplier>> reated-this-mont(int id);
 		//Task<ApiResponse<int>> CountSuppliersAsync();
 		//Task<ApiResponse<int>> CountVerifiedSuppliersAsync();
 		//Task<ApiResponse<int>> CountSuppliersCreatedThisMonthAsync();
 
-		//////have end point for supplier to detict the order status
-
 
 		////////Very important , we should have like method to get product from supplier ask supplier to enter her product 
 		///to register on system
-		
+
 		/// can change price 
+
+		Task<ApiResponse<PurchaseOrderDetailsResponseDto>> SimulateSupplierReceivingAsync(int purchaseOrderId);
 
 	}
 }

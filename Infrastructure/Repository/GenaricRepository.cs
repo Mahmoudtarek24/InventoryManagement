@@ -3,7 +3,7 @@ using System;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
-
+using EFCore.BulkExtensions;
 
 namespace Infrastructure.Repository
 {
@@ -17,16 +17,14 @@ namespace Infrastructure.Repository
 			this.context = _context;
 			this.entity = context.Set<T>();	
 		}
+		public async Task AddRangeAsync(IEnumerable<T> entities)
+		{
+			await context.BulkInsertAsync(entities.ToList());
+		}
 		public async Task AddAsync(T entity)
 		{
 			await this.entity.AddAsync(entity);	
 		}
-
-		public async Task AddRangeAsync(IEnumerable<T> entities)
-		{
-			//await context.BulkInsertAsync(entities);
-		}
-
 		public void Delete(T entity)
 		{
 			this.entity.Remove(entity);
@@ -43,7 +41,7 @@ namespace Infrastructure.Repository
 		{
 			return await entity.ToListAsync();
 		}
-		public async Task<T?> GetByIdAsync(int id)
+		public virtual async Task<T?> GetByIdAsync(int id)
 		{
 			return await entity.FindAsync(id);
 		}

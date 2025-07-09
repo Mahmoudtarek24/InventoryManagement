@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Application.DTO_s.ProductDto_s
 {
-	public class SupplierProductsQueryParameters : ProductQueryParameters
+	public class SupplierProductsQueryParameters : BaseQueryParameters
 	{
 		public ProductOrdering SortOption { get; set; }
 	}

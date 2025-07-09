@@ -14,6 +14,9 @@ namespace Infrastructure.UnitOfWork
 		public ISupplierRepository SupplierRepository { get; private set; }
 		public IPurchaseOrderItemRepository PurchaseOrderItemRepository { get; private set; }
 		public IPurchaseOrderRepository PurchaseOrderRepository { get; private set; }
+		public IWarehouseRepository WarehouseRepository { get; private set; }
+		public IInventoryRepository InventoryRepository { get; private set; }
+		public IStockMovementRepository StockMovementRepository { get; private set; }
 
 		public UnitOfWork(InventoryManagementDbContext context)
 		{
@@ -22,7 +25,10 @@ namespace Infrastructure.UnitOfWork
 			ProductRepository =new ProductRepository(context);
 			SupplierRepository =new SupplierRepository(context);
 			PurchaseOrderItemRepository=new PurchaseOrderItemRepository(context);
-			PurchaseOrderRepository=new PurchaseOrderRepository(context);	
+			PurchaseOrderRepository=new PurchaseOrderRepository(context);
+			WarehouseRepository=new WarehouseRepository(context);	
+			InventoryRepository=new InventoryRepository(context);
+			StockMovementRepository=new StockMovementRepository(context);	
 		}
 		public async Task BeginTransactionAsync()
 		{

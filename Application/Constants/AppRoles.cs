@@ -12,5 +12,8 @@ namespace Application.Constants
 		public const string InventoryManager = "InventoryManager";
 		public const string SalesViewer = "SalesViewer";
 		public const string Supplier = "Supplier";
+		public const string Bearer = "Bearer";
+		public const string RoleGroup = "Admin,Supplier,InventoryManager";
+
 	}
 }

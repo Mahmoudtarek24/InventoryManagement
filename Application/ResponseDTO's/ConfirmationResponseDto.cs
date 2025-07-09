@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Application.Constants.Enum;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Application.ResponseDTO_s
@@ -11,16 +14,5 @@ namespace Application.ResponseDTO_s
 		public string Message { get; set; }
 		public ConfirmationStatus status { get; set; }	
 	}
-	public enum ConfirmationStatus
-	{
-		SoftDeleted,
-		HardDeleted,
-		Created,
-		Failed,
-		Activated,
-		Deactivated,
-		Updated,
-		upload,
-		Cancelled,
-	}
+	
 }

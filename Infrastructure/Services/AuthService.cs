@@ -74,6 +74,7 @@ namespace Infrastructure.Services
 				PhoneNumber = dto.PhoneNumber,
 				FullName = dto.FullName,
 				CreateOn = DateTime.Now,
+				ProfileImage=""
 			};
 
 			var createResult = await userManager.CreateAsync(newUser, dto.Password);
@@ -103,7 +104,7 @@ namespace Infrastructure.Services
 		{
 			var responseDto = new SignInResponseDto();
 			var user = await userManager.FindByEmailAsync(SignInDto.Email);
-			if (user == null)
+			if (user is null)
 				throw new Exception();
 			//throw new UnauthorizedException("Invalid email or password.");
 

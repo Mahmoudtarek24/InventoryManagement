@@ -1,4 +1,5 @@
-﻿using Application.DTO_s;
+﻿using Application.Constants.Enum;
+using Application.DTO_s;
 using Application.DTO_s.PurchaseOrder;
 using Application.Interfaces;
 using Application.Mappings;
@@ -73,6 +74,7 @@ namespace Application.Services
 				IsDeleted = false,
 				SupplierId = dto.SupplierId,
 				PurchaseOrderStatus = dto.purchaseOrderStatus,
+				WarehouseId=dto.WarehouseId,	
 			};
 
 			var productPrices = await unitOfWork.ProductRepository
@@ -190,7 +192,7 @@ namespace Application.Services
 			};
 			var (totalCount, purchaseOrders) = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrdersWithFiltersAsync(filter);
 
-			queryParam.TotalCount = totalCount;
+			//queryParam.TotalCount = totalCount;
 
 			if (totalCount == 0)
 			{
@@ -207,14 +209,25 @@ namespace Application.Services
 			var pagedResponse = PagedResponse<List<PurchaseOrderListItemResponseDto>>.SimpleResponse(purchaseOrderDtos,
 				queryParam.PageNumber,
 				queryParam.PageSize,
-				queryParam.TotalCount);
+				totalCount);
 
-			return pagedResponse.AddPagingInfo(queryParam.TotalCount,uriService,route);
+			return pagedResponse.AddPagingInfo(totalCount, uriService,route);
 		}
 
-		public Task<PagedResponse<List<PurchaseOrderListItemResponseDto>>> GetAllDraftPurchaseOrdersAsync(BaseQueryParameters queryParameters)
+		public async Task<List<PurchaseOrderBySupplierResponseDto>> GetOrdersBySupplierAsync(int supplierId)
 		{
+			var purchaseOrders = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrdersBySupplierAsync(supplierId);
 
+			var purchaseOrderDtos = purchaseOrders.Select(po => new PurchaseOrderBySupplierResponseDto
+			{
+				PurchaseOrderId = po.PurchaseOrderId,
+				ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+				TotalCost = po.TotalCost,
+				PurchaseOrderStatus = po.PurchaseOrderStatus,
+				NumberOfItems = po.OrderItems?.Count ?? 0
+			}).ToList();
+
+			return purchaseOrderDtos;
 		}
 	}
 }

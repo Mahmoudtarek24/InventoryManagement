@@ -53,10 +53,37 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories", t =>
+                    b.ToTable("Categories", null, t =>
                         {
                             t.HasCheckConstraint("CK_DisplayOrderValue", "[DisplayOrder] > 1");
                         });
+                });
+
+            modelBuilder.Entity("Domain.Entity.Inventory", b =>
+                {
+                    b.Property<int>("InventoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InventoryId"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityInStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("InventoryId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("ProductId", "WarehouseId")
+                        .IsUnique();
+
+                    b.ToTable("Inventories", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entity.Product", b =>
@@ -108,7 +135,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("Name", "CategoryId")
                         .HasFilter("[IsDeleted] =0");
 
-                    b.ToTable("Products", t =>
+                    b.ToTable("Products", null, t =>
                         {
                             t.HasCheckConstraint("CK_Price_Positive", "[Price] >0");
                         });
@@ -145,11 +172,16 @@ namespace Infrastructure.Migrations
                         .HasPrecision(7, 2)
                         .HasColumnType("decimal(7,2)");
 
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
                     b.HasKey("PurchaseOrderId");
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("PurchaseOrders", t =>
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("PurchaseOrders", null, t =>
                         {
                             t.HasCheckConstraint("CK_PurchaseOrder_TotalCost_Positive", "[TotalCost] >0");
                         });
@@ -187,10 +219,48 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderItems", t =>
+                    b.ToTable("PurchaseOrderItems", null, t =>
                         {
                             t.HasCheckConstraint("CK_PurchaseOrderItem_OrderQuantity_Positive", "[OrderQuantity] > 0");
                         });
+                });
+
+            modelBuilder.Entity("Domain.Entity.StockMovement", b =>
+                {
+                    b.Property<int>("StockMovementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StockMovementId"));
+
+                    b.Property<int?>("DestinationWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MovementDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("prodcutId")
+                        .HasColumnType("int");
+
+                    b.HasKey("StockMovementId");
+
+                    b.HasIndex("DestinationWarehouseId");
+
+                    b.HasIndex("SourceWarehouseId");
+
+                    b.HasIndex("prodcutId");
+
+                    b.ToTable("StockMovements", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entity.Supplier", b =>
@@ -247,7 +317,25 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Supplier");
+                    b.ToTable("Supplier", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entity.Warehouse", b =>
+                {
+                    b.Property<int>("WarehouseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WarehouseId"));
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("WarehouseId");
+
+                    b.ToTable("Warehouses", (string)null);
                 });
 
             modelBuilder.Entity("Infrastructure.Models.ApplicationUser", b =>
@@ -521,6 +609,25 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entity.Inventory", b =>
+                {
+                    b.HasOne("Domain.Entity.Product", "Products")
+                        .WithMany("Inventories")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entity.Warehouse", "Warehouse")
+                        .WithMany("Inventories")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Products");
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("Domain.Entity.Product", b =>
                 {
                     b.HasOne("Domain.Entity.Category", "Category")
@@ -548,7 +655,15 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entity.Warehouse", "Warehouse")
+                        .WithMany("purchaseOrders")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Supplier");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Domain.Entity.PurchaseOrderItem", b =>
@@ -570,6 +685,29 @@ namespace Infrastructure.Migrations
                     b.Navigation("PurchaseOrder");
                 });
 
+            modelBuilder.Entity("Domain.Entity.StockMovement", b =>
+                {
+                    b.HasOne("Domain.Entity.Warehouse", "DestinationWarehouse")
+                        .WithMany("SourceStockMovements")
+                        .HasForeignKey("DestinationWarehouseId");
+
+                    b.HasOne("Domain.Entity.Warehouse", "SourceWarehouse")
+                        .WithMany("DestinationStockMovements")
+                        .HasForeignKey("SourceWarehouseId");
+
+                    b.HasOne("Domain.Entity.Product", "Product")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("prodcutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DestinationWarehouse");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("SourceWarehouse");
+                });
+
             modelBuilder.Entity("Domain.Entity.Supplier", b =>
                 {
                     b.HasOne("Infrastructure.Models.ApplicationUser", null)
@@ -581,7 +719,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Models.ApplicationUser", b =>
                 {
-                    b.OwnsMany("Infrastructure.Identity_Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("Infrastructure.Models.ApplicationUser.RefreshTokens#Infrastructure.Identity_Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
@@ -611,7 +749,7 @@ namespace Infrastructure.Migrations
 
                             b1.HasKey("ApplicationUserId", "Id");
 
-                            b1.ToTable("RefreshToken");
+                            b1.ToTable("RefreshToken", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationUserId");
@@ -678,7 +816,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entity.Product", b =>
                 {
+                    b.Navigation("Inventories");
+
                     b.Navigation("PurchaseOrderItems");
+
+                    b.Navigation("StockMovements");
                 });
 
             modelBuilder.Entity("Domain.Entity.PurchaseOrder", b =>
@@ -691,6 +833,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Products");
 
                     b.Navigation("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("Domain.Entity.Warehouse", b =>
+                {
+                    b.Navigation("DestinationStockMovements");
+
+                    b.Navigation("Inventories");
+
+                    b.Navigation("SourceStockMovements");
+
+                    b.Navigation("purchaseOrders");
                 });
 
             modelBuilder.Entity("Infrastructure.Models.ApplicationUser", b =>

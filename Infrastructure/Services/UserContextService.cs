@@ -12,11 +12,13 @@ namespace Infrastructure.Services
 	{
 		public string[] Roles { get ;private set; }
 		public string userId { get; private set; }
+		public string Route {  get; private set; }
 
-		public void SetUser(string[] Roles, string userId)
+		public void SetUser(string[] Roles, string userId,string route)
 		{
 			this.Roles = Roles;
 			this.userId = userId;	
+			this.Route =  route ?? string.Empty; ;	
 		}
 		public bool IsInRole(string roleName)
 		{

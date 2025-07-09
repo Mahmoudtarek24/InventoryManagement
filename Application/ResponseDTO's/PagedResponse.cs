@@ -21,7 +21,7 @@ namespace Application.ResponseDTO_s
 		public PagedResponse()
 		{
 			IsSuccess = true;
-			ErrorMessages = null;
+			ErrorMessages = null; 
 		}
 
 		public static PagedResponse<T> SimpleResponse(T data, int pageNumber, int pageSize, int totalRecords,string message=null)

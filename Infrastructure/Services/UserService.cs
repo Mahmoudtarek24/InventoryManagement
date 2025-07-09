@@ -1,4 +1,6 @@
-﻿using Application.DTO_s.AuthenticationDto_s;
+﻿using Application.Constants.Enum;
+using Application.DTO_s;
+using Application.DTO_s.AuthenticationDto_s;
 using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
@@ -61,7 +63,7 @@ namespace Infrastructure.Services
 			return ApiResponse<AuthenticationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(UserQueryParameters query, string route)
+		public async Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(ApplicationUserQueryParameters query, string route)
 		{
 			var parameter = new BaseFilter()
 			{
@@ -69,7 +71,7 @@ namespace Infrastructure.Services
 				PageSize = query.PageSize,
 				searchTearm = query.searchTearm,
 				SortAscending = query.SortAscending,
-				SortBy = query.SortBy,
+				SortBy = query.UserOrdering.ToString(),	
 			};
 			var (users, totalCount) = await GetUsersWithFiltersAsync(parameter);
 
@@ -86,9 +88,9 @@ namespace Infrastructure.Services
 
 			if (!string.IsNullOrEmpty(userFilter.searchTearm))
 				query = query.Where(e =>
-					  e.UserName.Contains(userFilter.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					  e.Email.Contains(userFilter.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					  (e.PhoneNumber != null && e.PhoneNumber.Contains(userFilter.searchTearm, StringComparison.OrdinalIgnoreCase)));
+				  e.UserName.ToLower().Contains(userFilter.searchTearm.ToLower()) ||
+				  e.Email.ToLower().Contains(userFilter.searchTearm.ToLower()) ||
+				  (e.PhoneNumber != null && e.PhoneNumber.ToString().Contains(userFilter.searchTearm)));
 
 			int totalCount = await query.CountAsync();
 
@@ -101,9 +103,6 @@ namespace Infrastructure.Services
 						break;
 					case "email":
 						query = userFilter.SortAscending ? query.OrderBy(e => e.Email) : query.OrderByDescending(e => e.Email);
-						break;
-					case "phonenumber":
-						query = userFilter.SortAscending ? query.OrderBy(e => e.PhoneNumber) : query.OrderByDescending(e => e.PhoneNumber);
 						break;
 					case "emailconfirmed":
 						query = userFilter.SortAscending ? query.OrderBy(e => e.EmailConfirmed) : query.OrderByDescending(e => e.EmailConfirmed);

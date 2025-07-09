@@ -1,4 +1,5 @@
-﻿using Application.DTO_s.AuthenticationDto_s;
+﻿using Application.DTO_s;
+using Application.DTO_s.AuthenticationDto_s;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
 using System;
@@ -10,11 +11,11 @@ using System.Threading.Tasks;
 
 namespace Application.Interfaces
 {
-	public interface IUserService //application user 
+	public interface IUserService //application user  
 	{
 		Task<ApiResponse<AuthenticationResponseDto>> FindByIdAsync(string userId);
 		Task<ApiResponse<AuthenticationResponseDto>> FindByEmailAsync(string email);
-		Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(UserQueryParameters query, string route);
+		Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(ApplicationUserQueryParameters query, string route);
 		Task<ConfirmationResponseDto> UnLOckedUsers(string userId);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteUserAsync(string userId);
 		Task<ApiResponse<UpdateUserRespondDto>> UpdateProfileAsync(UpdateUserProfileDto dto);

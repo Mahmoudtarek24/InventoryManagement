@@ -1,9 +1,12 @@
-﻿using Application.DTO_s.ProductDto_s;
+﻿using Application.Constants.Enum;
+using Application.DTO_s;
+using Application.DTO_s.ProductDto_s;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
+using Application.ResponseDTO_s.PurchaseOrder;
 using Domain.Entity;
 using Domain.Interface;
 using Domain.Parameters;
@@ -19,13 +22,17 @@ namespace Application.Services
 	{
 		private readonly IUnitOfWork unitOfWork;
 		private readonly IUriService uriService;
-		public ProductServices(IUnitOfWork unitOfWork, IUriService uriService)
+		private readonly IUserContextService userContextService;
+		private readonly RoleBasedSupplierMapper mapper;
+		public ProductServices(IUnitOfWork unitOfWork, IUriService uriService, IUserContextService userContextService
+			                  ,RoleBasedSupplierMapper mapper)
 		{
 			this.unitOfWork = unitOfWork;
 			this.uriService = uriService;
+			this.userContextService = userContextService;
+			this.mapper = mapper;
 		}
 
-		///  this will convert it to make supplier add product  
 		public async Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto)
 		{
 			bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
@@ -34,10 +41,11 @@ namespace Application.Services
 			//  throw new NotFoundException($"Category with ID '{dto.CategoryId}' not found.");
 
 			bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
-			if (!nameExists)
+			if (nameExists)
 				throw new Exception();
 			//throw new ConflictException($"Product with name '{dto.Name}' already exists.");
 
+			var supplier= await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
 			var product = new Product
 			{
 				Name = dto.Name,
@@ -45,6 +53,7 @@ namespace Application.Services
 				CategoryId = dto.CategoryId,
 				CreateOn = DateTime.Now,
 				IsAvailable = true,
+				SupplierId=supplier.SupplierId
 			};
 			product.Barcode = await GenerateBarcode(product);
 
@@ -85,7 +94,7 @@ namespace Application.Services
 			await unitOfWork.BeginTransactionAsync();
 			product.LastUpdateOn = DateTime.Now;
 			product.IsDeleted = !product.IsDeleted;
-			product.IsAvailable = !product.IsAvailable;		
+			product.IsAvailable = !product.IsAvailable;
 			await unitOfWork.CommitTransaction();
 
 			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
@@ -96,7 +105,7 @@ namespace Application.Services
 
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
-		public async Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(ProductQueryParameters productQuery, string route)
+		public async Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(BaseQueryParameters productQuery)
 		{
 			var parameter = new BaseFilter()
 			{
@@ -109,10 +118,10 @@ namespace Application.Services
 
 			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsWithFiltersAsync(parameter);
 			var productDtos = products.Select(c => c.ToResponseDto()).ToList();
-			var message = !productDtos.Any() ? "No products found matching your criteria." : null ;
+			var message = !productDtos.Any() ? "No products found matching your criteria." : null;
 
-			var pagedResult = PagedResponse<List<ProductResponseDto>>.SimpleResponse(productDtos, parameter.PageNumber, parameter.PageSize, totalCount,message);
-			return pagedResult.AddPagingInfo(totalCount, uriService, route);
+			var pagedResult = PagedResponse<List<ProductResponseDto>>.SimpleResponse(productDtos, parameter.PageNumber, parameter.PageSize, totalCount, message);
+			return pagedResult.AddPagingInfo(totalCount, uriService, userContextService.Route);
 		}
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status)
@@ -148,8 +157,8 @@ namespace Application.Services
 			var category = await unitOfWork.CategoryRepository.GetIfExistsAndNotDeletedAsync(categoryId);
 			if (category is null)
 				throw new Exception();
-				//throw new NotFoundException($"Category with ID '{categoryId}' not found.");
-			 
+			//throw new NotFoundException($"Category with ID '{categoryId}' not found.");
+
 			// Get products by category
 			var products = await unitOfWork.ProductRepository.GetProductsByCategoryAsync(categoryId);
 
@@ -182,13 +191,13 @@ namespace Application.Services
 
 			return default;
 		}
-		private async Task<string> GenerateBarcode(Product product)
+		private async Task<string> GenerateBarcode(Product product) ///// convert it to back ground job
 		{
 			string barcode;
 			do
 			{
 				var Number = new Random().Next(0001, 9999);
-				barcode = $"CT{product.CategoryId:D2}-Sup11-{product.CreateOn.ToString("yyMM")}-{Number}";
+				barcode = $"CT{product.CategoryId:D2}-Sup{product.SupplierId:D2}-{product.CreateOn:yyMM}-{Number}";
 
 			} while (!await unitOfWork.ProductRepository.IsBarcodeUniqueAsync(barcode));
 			return barcode;
@@ -204,23 +213,27 @@ namespace Application.Services
 				SortAscending = qP.SortAscending,
 				SortBy = qP.SortOption.ToString(),
 			};
-			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(supplierId, parameter);
+			var (totalCount,products) = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(supplierId, parameter);
 
-			//var productDtos = products.Select(product => new ProductsBySupplierResponseDto
-			//{
-			//	ProductId = product.Id, // Assuming Id is the ProductId
-			//	Name = product.Name,
-			//	Barcode = product.Barcode,
-			//	Price = product.Price,
-			//	IsAvailable = product.IsAvailable,
-			//	CategoryId = product.CategoryId,
-			//	IsDeleted = product.IsDeleted,
-			//	CreateOn = product.CreateOn,
-			//	LastUpdateOn = product.LastUpdateOn,
-			//}).ToList();
-			//return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos);
+			var productDtos = products.Select(product => mapper.MapProductToSupplierResponseDto(product)).ToList();
 
-			return default;
+			return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos, qP.PageNumber, qP.PageSize, totalCount);
+		}
+
+		public async Task<ApiResponse<List<PurchaseHistoryProductResponseDto>>> GetProductPurchaseHistoryAsync(int productId)
+		{
+			var purchaseHistoryItems = await unitOfWork.PurchaseOrderItemRepository.GetPurchaseHistoryByProductIdAsync(productId);
+
+			if (!purchaseHistoryItems.Any())
+				return ApiResponse<List<PurchaseHistoryProductResponseDto>>.Success(
+					new List<PurchaseHistoryProductResponseDto>(),
+					200,
+					"No purchase history found for this product.");
+
+			var historyDtos = purchaseHistoryItems.Select(e=>e.ToResponseDto()).ToList();	
+
+			return ApiResponse<List<PurchaseHistoryProductResponseDto>>.Success(historyDtos,200,
+				                      $"Found {historyDtos.Count} purchase history records for the product.");
 		}
 	}
 }

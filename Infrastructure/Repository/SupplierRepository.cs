@@ -26,9 +26,9 @@ namespace Infrastructure.Repository
 			// Search functionality
 			if (!string.IsNullOrEmpty(filter.searchTearm))
 				query = query.Where(e =>
-					e.CompanyName.Contains(filter.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					e.Email.Contains(filter.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					e.PhoneNumber.Contains(filter.searchTearm, StringComparison.OrdinalIgnoreCase));
+					e.CompanyName.ToLower().Contains(filter.searchTearm) ||
+					e.Email.Contains(filter.searchTearm) ||
+					e.PhoneNumber.Contains(filter.searchTearm));
 
 
 			int totalCount = await query.CountAsync();
@@ -86,7 +86,7 @@ namespace Infrastructure.Repository
 		public async  Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null)
 		{
 			var query = context.Supplier.Where(s => !s.IsDeleted &&
-													s.CompanyName.Equals(companyName, StringComparison.OrdinalIgnoreCase));
+													s.CompanyName.Equals(companyName));
 			if (excludeId.HasValue)
 			{
 				query = query.Where(s => s.SupplierId != excludeId.Value);
@@ -110,7 +110,7 @@ namespace Infrastructure.Repository
 			    await context.Supplier.AnyAsync(e=>e.SupplierId==supplierId&&!e.IsDeleted&&e.IsVerified);
 
 		public async Task<Supplier?> GetSupplierByUserIdAsync(string userId) =>
-			await  context.Set<Supplier>().AsNoTracking()
+			await  context.Supplier
 		                     .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsDeleted);
 
 

@@ -18,7 +18,8 @@ namespace Domain.Entity
 		public int SupplierId { get; set; }	
 		public Supplier Supplier { get; set; }
 		public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; }
-		///price of purchase 
+		public ICollection<Inventory> Inventories { get; set; }
+	    public ICollection<StockMovement> StockMovements { get; set; }
 	}
 }
 
