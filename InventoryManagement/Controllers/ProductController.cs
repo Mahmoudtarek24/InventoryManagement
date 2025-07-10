@@ -14,9 +14,11 @@ namespace InventoryManagement.Controllers
 	public class ProductController : ControllerBase
 	{
 		private readonly IProductServices productServices;
-		public ProductController(IProductServices productServices)
+		private readonly IUserContextService userContextService;
+		public ProductController(IProductServices productServices,IUserContextService userContextService)
 		{
 			this.productServices = productServices;
+            this.userContextService = userContextService;
 		}
 
 		[HttpPost]
@@ -28,6 +30,7 @@ namespace InventoryManagement.Controllers
 		}
 
 		[HttpGet("{id}")]
+		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.AllRole)]
 		public async Task<IActionResult> GetProductById(int id)
 		{
 			var result = await productServices.GetProductByIdAsync(id);
@@ -35,19 +38,32 @@ namespace InventoryManagement.Controllers
 		}
 
 		[HttpGet("by-category/{categoryId}")]
+		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.SystemRole)]
 		public async Task<IActionResult> GetProductsByCategory(int categoryId)
 		{
 			var result = await productServices.GetProductsByCategoryAsync(categoryId);
 			return Ok(result);
 		}
 
-		[HttpGet("by-supplier/{supplierId}")]
-		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.RoleGroup)]
-		public async Task<IActionResult> GetProductsBySupplier(int supplierId, [FromQuery] SupplierProductsQueryParameters qP)
+		[HttpGet("by-supplier")]
+		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.AllRole)]
+		public async Task<IActionResult> GetProductsBySupplier([FromQuery] string? supplierId, [FromQuery] SupplierProductsQueryParameters qP)
 		{
-			//////we should remove query her only page id
-			var result = await productServices.GetProductsBySupplierAsync(supplierId, qP);
-			return Ok(result);
+			if (userContextService.IsSupplier)
+			{
+				var result = await productServices
+						 .GetProductsBySupplierAsync(userContextService.userId, userContextService.IsSupplier, qP);
+				return Ok(result);
+			}
+			else
+			{
+				if (string.IsNullOrEmpty(supplierId))
+				{
+					return BadRequest("SupplierId is required for non-supplier users");
+				}
+				var result = await productServices.GetProductsBySupplierAsync(supplierId, userContextService.IsSupplier, qP);
+				return Ok(result);
+			}
 		}
 
 		[HttpPut("{productId}/availability")]
@@ -67,6 +83,7 @@ namespace InventoryManagement.Controllers
 		}
 
 		[HttpPost("bulk")]
+		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.Supplier)]
 		public async Task<IActionResult> BulkCreateProducts([FromBody] List<CreateProductDto> dtos)
 		{
 			var result = await productServices.BulkCreateProductsAsync(dtos);

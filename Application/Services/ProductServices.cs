@@ -1,6 +1,7 @@
 ﻿using Application.Constants.Enum;
 using Application.DTO_s;
 using Application.DTO_s.ProductDto_s;
+using Application.Exceptions;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.ResponseDTO_s;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services
 {
@@ -174,22 +176,63 @@ namespace Application.Services
 
 		public async Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos)
 		{
-			List<string> Errors = new List<string>();
+			var Warrning = new List<string>();
+			var validDtos = new List<CreateProductDto>();
+
+			var categoryIds = dtos.Select(dto => dto.CategoryId).Distinct().ToList();
+			var validCategoryIds = await unitOfWork.CategoryRepository.GetValidCategoryIdsAsync(categoryIds);
+
+			if (!validCategoryIds.Any())
+				throw new Exception();
+				///throw new NotFoundException("No valid categories found. All provided CategoryIds are invalid.");
 
 			foreach (var dto in dtos)
 			{
-				bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
-				if (!categoryExists)
-					Errors.Add($"Category with ID '{dto.CategoryId}' not found.");
-			}
-			foreach (var dto in dtos)
-			{
-				bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
-				if (!nameExists)
-					Errors.Add($"Product with name '{dto.Name}' already exists.");
+				if (!validCategoryIds.Contains(dto.CategoryId))
+					Warrning.Add($"Category with ID '{dto.CategoryId}' not found.");
+				else
+					validDtos.Add(dto); 
 			}
 
-			return default;
+			var productNamesByCategory = validDtos.GroupBy(e => e.CategoryId)
+		                           .ToDictionary(e=> e.Key, e => e.Select(e => e.Name).ToList());
+
+			var existingProducts = await unitOfWork.ProductRepository
+                                    		.GetExistingProductNamesInCategoriesAsync(productNamesByCategory);
+			
+			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+
+			var finalValidDtos = new List<CreateProductDto>();
+			foreach (var dto in dtos)
+			{
+				if (existingProducts.ContainsKey(dto.CategoryId) &&
+						   existingProducts[dto.CategoryId].Contains(dto.Name))
+					Warrning.Add($"Product with name '{dto.Name}' already exists in category '{dto.CategoryId}'.");
+				else
+					finalValidDtos.Add(dto);
+			}
+
+			if (!Warrning.Any())
+				throw new Exception();
+			//return ApiResponse<List<ProductResponseDto>>.Error(Warrning);.//////////////////////////////
+
+			var products = finalValidDtos.Select(e=> new Product
+			{
+				Name = e.Name,
+				Price = e.Price,
+				CategoryId = e.CategoryId,
+				CreateOn = DateTime.Now,
+				IsAvailable = true,
+				SupplierId = supplier.SupplierId
+			}).ToList();
+
+			await unitOfWork.BeginTransactionAsync();
+			await unitOfWork.ProductRepository.AddRangeAsync(products);
+			await unitOfWork.CommitTransaction();
+
+		
+			var responseDtos = products.Select(e=>e.ToResponseDto()).ToList();	
+			return ApiResponse<List<ProductResponseDto>>.Success(responseDtos,201);
 		}
 		private async Task<string> GenerateBarcode(Product product) ///// convert it to back ground job
 		{
@@ -202,24 +245,6 @@ namespace Application.Services
 			} while (!await unitOfWork.ProductRepository.IsBarcodeUniqueAsync(barcode));
 			return barcode;
 		}
-
-		public async Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(int supplierId, SupplierProductsQueryParameters qP)
-		{
-			var parameter = new BaseFilter()
-			{
-				PageNumber = qP.PageNumber,
-				PageSize = qP.PageSize,
-				searchTearm = qP.searchTearm,
-				SortAscending = qP.SortAscending,
-				SortBy = qP.SortOption.ToString(),
-			};
-			var (totalCount,products) = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(supplierId, parameter);
-
-			var productDtos = products.Select(product => mapper.MapProductToSupplierResponseDto(product)).ToList();
-
-			return PagedResponse<List<ProductsBySupplierResponseDto>>.SimpleResponse(productDtos, qP.PageNumber, qP.PageSize, totalCount);
-		}
-
 		public async Task<ApiResponse<List<PurchaseHistoryProductResponseDto>>> GetProductPurchaseHistoryAsync(int productId)
 		{
 			var purchaseHistoryItems = await unitOfWork.PurchaseOrderItemRepository.GetPurchaseHistoryByProductIdAsync(productId);
@@ -234,6 +259,34 @@ namespace Application.Services
 
 			return ApiResponse<List<PurchaseHistoryProductResponseDto>>.Success(historyDtos,200,
 				                      $"Found {historyDtos.Count} purchase history records for the product.");
+		}
+
+		public async Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(string supplierId, bool IsSupplier, SupplierProductsQueryParameters qP)
+		{
+			string actualSupplierId = supplierId;
+			if (IsSupplier)
+			{
+				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
+				if (supplier == null)
+				{
+					throw new UnauthorizedAccessException("Supplier not found");
+				}
+				actualSupplierId = supplier.SupplierId.ToString();
+			}
+			var parameter = new BaseFilter()
+			{
+				PageNumber = qP.PageNumber,
+				PageSize = qP.PageSize,
+				searchTearm = qP.searchTearm,
+				SortAscending = qP.SortAscending,
+				SortBy = qP.SortOption.ToString(),
+			};
+			var (totalCount, products) = await unitOfWork.ProductRepository
+				              .GetProductsBySupplierAsync(int.Parse(actualSupplierId), parameter);
+			var productDtos = products.Select(product => mapper.MapProductToSupplierResponseDto(product)).ToList();
+
+			return PagedResponse<List<ProductsBySupplierResponseDto>>
+				           .SimpleResponse(productDtos, qP.PageNumber, qP.PageSize, totalCount);
 		}
 	}
 }

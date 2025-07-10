@@ -16,5 +16,6 @@ namespace Domain.Interface
 		Task<(List<Category>, int)> GetCategorysWithFiltersAsync(BaseFilter catF);
 		Task<List<Category>> GetAllActiveCategoryAsync();
 		Task<bool> IsValidCategoryIdAsync(int categoryId);
+		Task<List<int>> GetValidCategoryIdsAsync(List<int> categoryIds);
 	}
 }

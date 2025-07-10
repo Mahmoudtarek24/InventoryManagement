@@ -8,7 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Enum;
 using Microsoft.AspNetCore.Http;
-using Application.ResponseDTO_s.PurchaseOrder; 
+using Application.ResponseDTO_s.PurchaseOrder;
+using Application.DTO_s;
 
 namespace Application.Interfaces
 {
@@ -22,20 +23,16 @@ namespace Application.Interfaces
 
 		// verification 
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeVerificationStatusAsync(ChangeSupplierVerificationStatusDto dto);
-		Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(int supplierId);
+		Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId, bool IsSupplier);
 		Task<ApiResponse<List<SupplierVerificationStatusRespondDto>>> GetSuppliersByVerificationStatusAsync(bool? isVerified=null);
 
 		//TaxDocument
-		Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(int id,IFormFile file);
+		Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(string supplierId,FileUploadDto file);
 
 		///Task<ApiResponse<supplier>> reated-this-mont(int id);
 		//Task<ApiResponse<int>> CountSuppliersAsync();
 		//Task<ApiResponse<int>> CountVerifiedSuppliersAsync();
 		//Task<ApiResponse<int>> CountSuppliersCreatedThisMonthAsync();
-
-
-		////////Very important , we should have like method to get product from supplier ask supplier to enter her product 
-		///to register on system
 
 		/// can change price 
 

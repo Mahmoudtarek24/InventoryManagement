@@ -14,7 +14,7 @@ namespace Infrastructure.Configurations
 		public void Configure(EntityTypeBuilder<Product> builder)
 		{
 			builder.Property(e => e.Name).HasMaxLength(150);
-			builder.Property(e=>e.Barcode).HasMaxLength(100).IsRequired();
+			builder.Property(e=>e.Barcode).HasMaxLength(100);
 			builder.Property(e => e.Price).HasPrecision(9, 3);
 			builder.HasCheckConstraint("CK_Price_Positive", "[Price] >0");
 			builder.HasOne(e=>e.Category).WithMany(e=>e.Products).HasForeignKey(e=>e.CategoryId);

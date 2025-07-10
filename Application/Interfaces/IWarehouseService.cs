@@ -12,8 +12,8 @@ namespace Application.Interfaces
 {
 	public interface IWarehouseService
 	{
-		Task<ApiResponse<ConfirmationResponseDto>> CreateCategoryAsync(CreateWarehouseDto dto);
+		Task<ApiResponse<ConfirmationResponseDto>> CreateWarehouseAsync(CreateWarehouseDto dto);
 		Task<ApiResponse<WarehouseResponseDto>> GetWarehouseByIdAsync(int id);
-		Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query, string route);
+		Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query);
 	}
 }

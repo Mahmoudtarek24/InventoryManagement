@@ -10,7 +10,7 @@ namespace Domain.Entity
 	{
 		public int ProductId { get; set; }	
 		public string Name { get; set; }	
-		public string Barcode { get; set; }	
+		public string? Barcode { get; set; }	
 		public decimal Price { get; set; }	
 		public bool IsAvailable { get; set; }	
 		public int CategoryId { get; set; }

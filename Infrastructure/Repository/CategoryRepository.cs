@@ -69,7 +69,10 @@ namespace Infrastructure.Repository
 									 .ToListAsync();
 
 		public async Task<bool> IsValidCategoryIdAsync(int categoryId) =>
-			          await  context.Categories.AnyAsync(e=>e.CategoryId== categoryId&&!e.IsDeleted);		
+			          await  context.Categories.AnyAsync(e=>e.CategoryId== categoryId&&!e.IsDeleted);
+
+		public async Task<List<int>> GetValidCategoryIdsAsync(List<int> categoryIds) =>
+			 await context.Categories.Where(c => categoryIds.Contains(c.CategoryId)).Select(c => c.CategoryId).ToListAsync();
 	}
 }
 

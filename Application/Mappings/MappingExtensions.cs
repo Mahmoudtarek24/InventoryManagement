@@ -93,7 +93,7 @@ namespace Application.Mappings
 				CompanyName = supplier.CompanyName,
 				IsVerified = supplier.IsVerified,
 				Reason = supplier.RejectionReason,
-				Status = supplier.VerificationStatus,
+				Status = supplier.VerificationStatus.ToString(),
 				SupplierId = supplier.SupplierId,
 			};
 		}

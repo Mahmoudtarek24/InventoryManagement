@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -142,8 +143,27 @@ namespace Infrastructure.Repository
 
 		public async Task<Dictionary<int, decimal>> GetProductPricesAsync(List<int> productIds)=>
 			 await context.Products.AsNoTracking().Where(e=> productIds.Contains(e.ProductId))
-			                  .ToDictionaryAsync(e=>e.ProductId, e=>e.Price);	
+			                  .ToDictionaryAsync(e=>e.ProductId, e=>e.Price);
 
+
+		public async Task<Dictionary<int, List<string>>> GetExistingProductNamesInCategoriesAsync(
+			Dictionary<int, List<string>> productNamesByCategory)
+				{
+					var result = new Dictionary<int, List<string>>();
+
+					foreach(var categoryGroup in productNamesByCategory)
+			        {
+
+						var categoryId= categoryGroup.Key;	
+						var categoryName = categoryGroup.Value;
+			         	var existingNames= await context.Products
+					              .Where(e=>e.CategoryId==categoryId&&categoryName.Contains(e.Name))
+								                    .Select(e=>e.Name).ToListAsync();
+
+						if (existingNames.Any())
+					          result[categoryId]=existingNames;	
+			        }
+					return result;
+				}
 	}
 }
-

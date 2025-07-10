@@ -22,7 +22,7 @@ namespace Application.Interfaces
 		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(BaseQueryParameters productQuery);
 		Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId);
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status);
-		Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(int supplierId, SupplierProductsQueryParameters qP);
+		Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(string supplierId,bool IsSupplier ,SupplierProductsQueryParameters qP);
 
 		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto); //dint change name if have quentity on stick
 		//Task<ApiResponse<List<ProductStockAlertDto>>> GetDeletedProductsWithStockAsync();

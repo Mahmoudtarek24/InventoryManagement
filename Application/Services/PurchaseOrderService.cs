@@ -21,12 +21,12 @@ namespace Application.Services
 {
 	public class PurchaseOrderService : IPurchaseOrderService
 	{
-		Dictionary<string, List<PurchaseOrderStatus>> ValidOrderStatus
-					  = new Dictionary<string, List<PurchaseOrderStatus>>()
+		Dictionary<string, List<Constants.Enum.PurchaseOrderStatus>> ValidOrderStatus
+					  = new Dictionary<string, List<Constants.Enum.PurchaseOrderStatus>>()
 					  {
-						  {"Create",new List<PurchaseOrderStatus>{ PurchaseOrderStatus.Draft ,PurchaseOrderStatus.Sent} },
-						  {"Update",new List<PurchaseOrderStatus>{ PurchaseOrderStatus.Draft ,PurchaseOrderStatus.Sent,
-						  PurchaseOrderStatus.Cancelled} },
+						  {"Create",new List<Constants.Enum.PurchaseOrderStatus>{ Constants.Enum.PurchaseOrderStatus.Draft , Constants.Enum.PurchaseOrderStatus.Sent} },
+						  {"Update",new List<Constants.Enum.PurchaseOrderStatus>{ Constants.Enum.PurchaseOrderStatus.Draft ,Constants.Enum.PurchaseOrderStatus.Sent,
+						  Constants.Enum.PurchaseOrderStatus.Cancelled} },
 					  };
 
 		private readonly IUnitOfWork unitOfWork;
@@ -46,8 +46,8 @@ namespace Application.Services
 			List<string> warnings = new List<string>();
 
 			var key = "Create";
-			if (ValidOrderStatus[key].Contains(dto.purchaseOrderStatus))
-				throw new Exception();
+			//if (ValidOrderStatus[key].Contains(dto.purchaseOrderStatus))
+			//	throw new Exception();
 			//throw new BadRequestException($"Invalid purchase order status '{dto.purchaseOrderStatus}' for operation '{context}'.");
 
 			bool supplierExists = await unitOfWork.SupplierRepository.IsVerifiedAndActiveSupplierAsync(dto.SupplierId);
@@ -75,6 +75,7 @@ namespace Application.Services
 				SupplierId = dto.SupplierId,
 				PurchaseOrderStatus = dto.purchaseOrderStatus,
 				WarehouseId=dto.WarehouseId,	
+				OrderItems=new List<PurchaseOrderItem>()	
 			};
 
 			var productPrices = await unitOfWork.ProductRepository
@@ -104,31 +105,31 @@ namespace Application.Services
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateDraftPurchaseOrderAsync(UpdatePurchaseOrderDto dto)
 		{
-			var PurchaseOrder = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrderWithItemsAsync(dto.PurchaseOrderId);
-			if (PurchaseOrder is null || !PurchaseOrder.OrderItems.Any())
-				throw new Exception();
+			//var PurchaseOrder = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrderWithItemsAsync(dto.PurchaseOrderId);
+			//if (PurchaseOrder is null || !PurchaseOrder.OrderItems.Any())
+			//	throw new Exception();
 
 
-			if (!ValidOrderStatus["Update"].Contains(dto.purchaseOrderStatus.Value))
-			{
-				throw new Exception();
-			}
+			//if (!ValidOrderStatus["Update"].Contains(dto.purchaseOrderStatus.Value))
+			//{
+			//	throw new Exception();
+			//}
 
-			if (dto.purchaseOrderStatus == PurchaseOrderStatus.Cancelled)
-			{
-				var responseDto = new ConfirmationResponseDto()
-				{
-					Message = "cancelled",
-					status = ConfirmationStatus.Cancelled
-				};
-				return ApiResponse<ConfirmationResponseDto>.Success(responseDto,200);
-			}
+			//if (dto.purchaseOrderStatus == PurchaseOrderStatus.Cancelled)
+			//{
+			//	var responseDto = new ConfirmationResponseDto()
+			//	{
+			//		Message = "cancelled",
+			//		status = ConfirmationStatus.Cancelled
+			//	};
+			//	return ApiResponse<ConfirmationResponseDto>.Success(responseDto,200);
+			//}
 
-			var oldDict = PurchaseOrder.OrderItems.OrderBy(e=>e.ProductId)
-				                             .ToDictionary(e => e.ProductId, e => e.OrderQuantity);
+			//var oldDict = PurchaseOrder.OrderItems.OrderBy(e=>e.ProductId)
+			//	                             .ToDictionary(e => e.ProductId, e => e.OrderQuantity);
 
-			var newDict = dto.purchaseOrderItemDtos.OrderBy(e=>e.ProductId)
-				                           .ToDictionary(e => e.ProductId, e => e.OrderQuantity);
+			//var newDict = dto.purchaseOrderItemDtos.OrderBy(e=>e.ProductId)
+			//	                           .ToDictionary(e => e.ProductId, e => e.OrderQuantity);
 
 			//bool areEqual= oldDict.Count() == newDict.Count()&&oldDict.SequenceEqual(newDict);
 			//if (areEqual)
@@ -156,22 +157,22 @@ namespace Application.Services
 
 			if (userContextService.IsSupplier)
 			{
-				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
-				if (supplier == null)
-					throw new Exception("Supplier not found for current user.");
+				//var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+				//if (supplier == null)
+				//	throw new Exception("Supplier not found for current user.");
 
-				// Check if the purchase order belongs to this supplier
-				if (purchaseOrder.SupplierId != supplier.SupplierId)
-					throw new Exception("Access denied. You can only view your own purchase orders.");
+				//// Check if the purchase order belongs to this supplier
+				//if (purchaseOrder.SupplierId != supplier.SupplierId)
+				//	throw new Exception("Access denied. You can only view your own purchase orders.");
 
-				// Check if supplier can view this purchase order based on status
-				var allowedStatuses = new[] {
-						PurchaseOrderStatus.Sent,
-						PurchaseOrderStatus.PartiallyReceived,
-						PurchaseOrderStatus.Received };
+				//// Check if supplier can view this purchase order based on status
+				//var allowedStatuses = new[] {
+				//		PurchaseOrderStatus.Sent,
+				//		PurchaseOrderStatus.PartiallyReceived,
+				//		PurchaseOrderStatus.Received };
 			
-				if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
-					throw new Exception("Access denied. You can only view purchase orders that have been sent to you.");
+				//if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
+				//	throw new Exception("Access denied. You can only view purchase orders that have been sent to you.");
 			}
 
 			var response = roleBasedPurchaseOrderMapper.MapToPurchaseOrderDetailsDtoAsync(purchaseOrder);
@@ -188,7 +189,7 @@ namespace Application.Services
 				searchTearm = queryParam.searchTearm,
 				SortAscending = queryParam.SortAscending,
 				SortBy = queryParam.SortOptions.ToString(),
-				Status = queryParam.Status 
+			//	Status = queryParam.Status 
 			};
 			var (totalCount, purchaseOrders) = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrdersWithFiltersAsync(filter);
 

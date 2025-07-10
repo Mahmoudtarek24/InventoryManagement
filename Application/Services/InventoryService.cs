@@ -27,7 +27,7 @@ namespace Application.Services
 								.GetInventoryByProductAndWarehouseAsync(productId, warehouseId);
 
 			if (inventory is null)
-				return ApiResponse<InventoryResponseDto>.Success(new InventoryResponseDto()
+				return ApiResponse<InventoryResponseDto>.Success(null
 						 , 200, "Inventory not found for the specified product and warehouse");
 
 			var inventoryDto = inventory.ToResponseDto();
@@ -65,8 +65,8 @@ namespace Application.Services
 			var inventoryList = await unitOfWork.InventoryRepository.GetInventoryByProductAsync(productId);
 
 			if (!inventoryList.Any())
-				return ApiResponse<List<InventoryResponseDto>>.Success(new List<InventoryResponseDto>()
-						 , 200, "Inventory not found for the specified product and ");
+				return ApiResponse<List<InventoryResponseDto>>.Success(null
+						 , 200, "Inventory not found for the specified product ");
 
 
 			var inventoryDto = inventoryList.Select(e => e.ToResponseDto()).ToList();
@@ -79,7 +79,7 @@ namespace Application.Services
 			var lowStockItems = await unitOfWork.InventoryRepository.GetLowStockItemsAsync(threshold);
 
 			if (!lowStockItems.Any())
-				return ApiResponse<List<LowStockAlertDto>>.Success(new List<LowStockAlertDto>(),
+				return ApiResponse<List<LowStockAlertDto>>.Success(null,
 					200, "No low stock items found");
 
 			var lowStockDto = lowStockItems.Select(e => e.ToLowStockAlertDto()).ToList();

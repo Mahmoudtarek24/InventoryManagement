@@ -13,6 +13,6 @@ namespace Domain.Interface
 		Task AddAsync(T entity);
 		void Delete(T entity);
 		Task DeleteByIdAsync(int id);
-		//Task AddRangeAsync(IEnumerable<T> entities);
+		Task AddRangeAsync(IEnumerable<T> entities);
 	}
 }

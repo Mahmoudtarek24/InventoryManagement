@@ -19,5 +19,7 @@ namespace Domain.Interface
 		Task<(int, List<Product>)> GetProductsBySupplierAsync(int supplierId, BaseFilter prodF);	
 		Task<List<int>> GetProductsBySupplierAsync(int supplierId);
 		Task<Dictionary<int, decimal>> GetProductPricesAsync(List<int> productIds);
+		Task<Dictionary<int, List<string>>> GetExistingProductNamesInCategoriesAsync(
+			Dictionary<int, List<string>> productNamesByCategory);
 	}
 }

@@ -157,28 +157,22 @@ namespace Application.Services
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> ChangeVerificationStatusAsync(ChangeSupplierVerificationStatusDto dto)
 		{
-			if (!userContextService.IsAdmin)  //////////this code must be on controller 
-				throw new Exception();
-			// throw new UnauthorizedException("Only administrators can verify suppliers.");
-
-
 			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(dto.SupplierId);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
 				throw new Exception();
 			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
 
-			if (existingSupplier.VerificationStatus == dto.newStatus)
+			var newStatus = (Domain.Enum.VerificationStatus)dto.newStatus;
+
+			if (existingSupplier.VerificationStatus == newStatus)
 				return ApiResponse<ConfirmationResponseDto>.Failuer(400, "Supplier already has this verification status.");
 
-
-			existingSupplier.VerificationStatus = dto.newStatus;
+			existingSupplier.VerificationStatus = newStatus;
 			existingSupplier.LastUpdateOn = DateTime.Now;
 
-			if (dto.newStatus == VerificationStatus.Verified)
-			{
+			if (dto.newStatus == Application.Constants.Enum.VerificationStatus.Verified)
 				existingSupplier.IsVerified = true;
-			}
-			if (dto.newStatus == VerificationStatus.Rejected)
+			if (dto.newStatus == Application.Constants.Enum.VerificationStatus.Rejected)
 			{
 				existingSupplier.IsVerified = false;
 				existingSupplier.RejectionReason = dto.RejectionReason;
@@ -195,17 +189,28 @@ namespace Application.Services
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(int supplierId)
+		public async Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId,bool IsSupplier)
 		{
-			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(supplierId);
+			string actualSupplierId = supplierId;
+			if (IsSupplier)
+			{
+				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
+				if (supplier == null)
+				{
+					throw new UnauthorizedAccessException("Supplier not found");
+				}
+				actualSupplierId = supplier.SupplierId.ToString();
+			}
+
+			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(int.Parse(actualSupplierId));
 			if (existingSupplier == null || existingSupplier.IsDeleted)
 				throw new Exception();
 			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
 
 			var responseDto = new SupplierVerificationStatusBaseRespondDto
 			{
-				Status = existingSupplier.VerificationStatus,
-				Reason = existingSupplier.RejectionReason
+				Status = existingSupplier.VerificationStatus.ToString(),
+				Reason = existingSupplier.RejectionReason?? "No enter reson"
 			};
 			return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Success(responseDto, 200, "Verification status retrieved successfully");
 		}
@@ -224,10 +229,10 @@ namespace Application.Services
 			return ApiResponse<List<SupplierVerificationStatusRespondDto>>.Success(responseDtos, 200, message);
 		}
 
-		public async Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(int supplierId, IFormFile file)
+		public async Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(string supplierId, FileUploadDto file)
 		{
 			////on controller i will check from userId is supplier
-			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(supplierId);
+			var existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
 				throw new Exception();
 			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
@@ -237,7 +242,7 @@ namespace Application.Services
 				imageStorageService.DeleteImage(existingSupplier.TaxDocumentPath);
 			}
 
-			var (uploadSuccess, fileName) = await imageStorageService.UploadImage(file, "supplier-documents");
+			var (uploadSuccess, fileName) = await imageStorageService.UploadImage(file.File, "supplier-documents");
 
 			if (!uploadSuccess)
 				throw new Exception();
@@ -264,14 +269,14 @@ namespace Application.Services
 			if (purchaseOrder == null || purchaseOrder.IsDeleted)
 				throw new Exception("Purchase order not found.");
 
-			var allowedStatuses = new[] {
-						PurchaseOrderStatus.Sent,
-						PurchaseOrderStatus.PartiallyReceived,
-			};
+			//var allowedStatuses = new[] {
+			//			PurchaseOrderStatus.Sent,
+			//			PurchaseOrderStatus.PartiallyReceived,
+			//};
 
-			if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
-				return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(new PurchaseOrderDetailsResponseDto(), 200
-					, "Purchase order status doesn't allow receiving simulation.");
+			//if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
+			//	return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(new PurchaseOrderDetailsResponseDto(), 200
+			//		, "Purchase order status doesn't allow receiving simulation.");
 
 			Random rnd = new Random();
 			foreach (var item in purchaseOrder.OrderItems.Where(e => e.ReceivedQuantity < e.OrderQuantity))
@@ -302,8 +307,8 @@ namespace Application.Services
 
 			purchaseOrder.PurchaseOrderStatus = isFullyReceived switch
 			{
-				true => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.Received,
-				false => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.PartiallyReceived,
+				//true => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.Received,
+				//false => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.PartiallyReceived,
 			};
 			purchaseOrder.LastUpdateOn = DateTime.Now;
 		}

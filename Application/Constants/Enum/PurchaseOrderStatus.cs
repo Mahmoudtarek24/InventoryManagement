@@ -2,16 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+
 namespace Application.Constants.Enum
 {
 	[JsonConverter(typeof(JsonStringEnumConverter))]
-	public enum EgyptianGovernorate
+	public enum PurchaseOrderStatus
 	{
-		Cairo,
-		Alexandria,
-		PortSaid,
-		Dakahlia,
+		Draft = 0,
+		Sent = 1,
+		PartiallyReceived = 3,
+		Received = 4,
+		Cancelled = 5
 	}
 }

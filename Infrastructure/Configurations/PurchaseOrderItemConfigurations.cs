@@ -16,7 +16,7 @@ namespace Infrastructure.Configurations
 			builder.HasKey(e => e.PurchaseOrderItemId);
 			builder.Property(e => e.OrderQuantity).IsRequired();
 			builder.Property(e => e.ReceivedQuantity).HasDefaultValue(0);
-			builder.Property(e => e.UnitPrice).HasPrecision(6, 2);
+			builder.Property(e => e.UnitPrice).HasPrecision(10, 2);
 			builder.HasCheckConstraint("CK_PurchaseOrderItem_OrderQuantity_Positive", "[OrderQuantity] > 0");
 
 			builder.HasOne(e => e.Product)

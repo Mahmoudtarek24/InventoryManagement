@@ -24,22 +24,23 @@ namespace InventoryManagement
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(options =>
 			{
-				//options.SwaggerDoc("v1", new OpenApiInfo
-				//{
-				//	Version = "v1",
-				//	Title = "Inventory Management",
-				//	Contact = new OpenApiContact
-				//	{
-				//		Name = "Mahmoud Tarek",
-				//		Email = "mahmoudtark556@gmail.com"
-				//	},
-				//	Description = "Inventory System API - Learning Project",
-				//	License = new OpenApiLicense
-				//	{
-				//		Name = "View on GitHub",
-				//		Url = new Uri("https://github.com/Mahmoudtarek24/InventoryManagement")
-				//	}
-				//});
+				options.SwaggerDoc("v1", new OpenApiInfo
+				{
+					Version = "v1",
+					Title = "Inventory Management",
+					Contact = new OpenApiContact
+					{
+						Name = "Mahmoud Tarek",
+						Email = "mahmoudtark556@gmail.com"
+					},
+					Description = "Inventory System API - Learning Project",
+					License = new OpenApiLicense
+					{
+						Name = "View on GitHub",
+						Url = new Uri("https://github.com/Mahmoudtarek24/InventoryManagement")
+					}
+				});
+				//options.OperationFilter<FileUploadOperation>();
 				options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 				{
 					Name = "Authorization",

@@ -24,7 +24,7 @@ namespace Application.Services
 		{
 			this.unitOfWork = unitOfWork;
 		}
-		public async Task<ApiResponse<ConfirmationResponseDto>> CreateCategoryAsync(CreateWarehouseDto dto)
+		public async Task<ApiResponse<ConfirmationResponseDto>> CreateWarehouseAsync(CreateWarehouseDto dto)
 		{
 			var serialNumber = await GenerateSerialNumberAsync(dto);
 			var warehouse = new Warehouse()
@@ -75,7 +75,7 @@ namespace Application.Services
 			return ApiResponse<WarehouseResponseDto>.Success(response, 200);
 		}
 
-		public async Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query,string route)
+		public async Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query)
 		{
 			var parameter = new BaseFilter()
 			{
