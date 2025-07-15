@@ -30,20 +30,18 @@ namespace Application.Services
 		private readonly IAuthService authService;
 		private readonly RoleBasedSupplierMapper mapper;
 		private readonly RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper;
-		private readonly IUriService uriService;
-		private readonly IUserContextService userContextService;
 		private readonly IImageStorageService imageStorageService;
+		private readonly IWarehouseService warehouseService;
 		public SupplierServices(IUnitOfWork unitOfWork, IAuthService authService, RoleBasedSupplierMapper mapper
-							   , IUriService uriService, IUserContextService userContextService
-				   , IImageStorageService imageStorageService, RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper)
+							    , IWarehouseService warehouseService , IImageStorageService imageStorageService
+				                , RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper)
 		{
 			this.unitOfWork = unitOfWork;
 			this.authService = authService;
 			this.mapper = mapper;
-			this.uriService = uriService;
-			this.userContextService = userContextService;
 			this.imageStorageService = imageStorageService;
 			this.roleBasedPurchaseOrderMapper = roleBasedPurchaseOrderMapper;
+			this.warehouseService = warehouseService;	
 		}
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreateSupplierAsync(CreateSupplierDto dto)
 		{
@@ -269,22 +267,22 @@ namespace Application.Services
 			if (purchaseOrder == null || purchaseOrder.IsDeleted)
 				throw new Exception("Purchase order not found.");
 
-			//var allowedStatuses = new[] {
-			//			PurchaseOrderStatus.Sent,
-			//			PurchaseOrderStatus.PartiallyReceived,
-			//};
+			var allowedStatuses = new[] {PurchaseOrderStatus.Sent, PurchaseOrderStatus.PartiallyReceived };
 
-			//if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
-			//	return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(new PurchaseOrderDetailsResponseDto(), 200
-			//		, "Purchase order status doesn't allow receiving simulation.");
+			if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
+				return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(null, 200
+					, "Purchase order status doesn't allow receiving simulation.");
 
 			Random rnd = new Random();
 			foreach (var item in purchaseOrder.OrderItems.Where(e => e.ReceivedQuantity < e.OrderQuantity))
 				item.ReceivedQuantity = SimulateItemReceiving(item, rnd);
 
-			UpdatePurchaseOrderStatus(purchaseOrder);
 			await unitOfWork.BeginTransactionAsync();
+			UpdatePurchaseOrderStatus(purchaseOrder);
 			await unitOfWork.CommitTransaction();
+
+			///////will call it her as background job  SendProductsToWarehouse(PurchaseOrder purchaseOrder)
+			await warehouseService.SendProductsToWarehouse(purchaseOrder);
 
 			var response = roleBasedPurchaseOrderMapper.MapToPurchaseOrderDetailsDtoAsync(purchaseOrder);
 			return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(response, 200);
@@ -307,41 +305,10 @@ namespace Application.Services
 
 			purchaseOrder.PurchaseOrderStatus = isFullyReceived switch
 			{
-				//true => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.Received,
-				//false => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.PartiallyReceived,
+				true => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.Received,
+				false => purchaseOrder.PurchaseOrderStatus = PurchaseOrderStatus.PartiallyReceived,
 			};
 			purchaseOrder.LastUpdateOn = DateTime.Now;
-		}
-
-		public async Task SendProductsToWarehouse(PurchaseOrder purchaseOrder)
-		{
-			var warehouse = await unitOfWork.WarehouseRepository.GetByIdAsync(purchaseOrder.WarehouseId);
-
-			if (warehouse == null)
-				throw new Exception();
-			///throw new NotFoundException("Warehouse not found");
-
-			foreach (var item in purchaseOrder.OrderItems)
-			{
-				if (item.ReceivedQuantity == 0)
-					continue;
-
-				var existingInventory = warehouse.Inventories.FirstOrDefault(i => i.ProductId == item.ProductId);
-
-				if (existingInventory != null)
-					existingInventory.QuantityInStock += item.ReceivedQuantity;
-				else
-				{
-					var newInventory = new Inventory
-					{
-						ProductId = item.ProductId,
-						QuantityInStock = item.ReceivedQuantity,
-						WarehouseId = warehouse.WarehouseId
-					};
-
-					await unitOfWork.InventoryRepository.AddAsync(newInventory);
-				}
-			}
 		}
 	}
 }

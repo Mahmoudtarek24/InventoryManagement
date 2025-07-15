@@ -1,5 +1,5 @@
-﻿using Application.ResponseDTO_s.InventoryResponse;
-using Domain.Entity;
+﻿using Domain.Entity;
+using Domain.Enum;
 using Domain.Interface;
 using Domain.Parameters;
 using Domain.QueryParameters;
@@ -18,12 +18,11 @@ namespace Infrastructure.Repository
 	{
 		public InventoryRepository(InventoryManagementDbContext context) : base(context) { }
 
-		public async Task<InventoryInfo?> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId)
-		{
-			return await context.Inventories
+
+		public async Task<Inventory?> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId) =>
+		         await context.Inventories
 				 .Where(i => i.ProductId == productId && i.WarehouseId == warehouseId && !i.Products.IsDeleted)
-				.Select(InventoryProjection).FirstOrDefaultAsync();
-		}
+				 .FirstOrDefaultAsync();
 
 		public async Task<(List<InventoryInfo>, int)> GetInventoryByWarehouseWithFiltersAsync
 																				   (int warehouseId, BaseFilter filter)
@@ -66,6 +65,12 @@ namespace Infrastructure.Repository
 				WarehouseId = inventory.WarehouseId,
 				SerialNumber = inventory.Warehouse.SerialNumber
 			};
+
+
+		public async Task<List<Inventory>> GetInventorysByProductsAndWarehousesAsync(List<int> productId,List<int> warehouseId) =>
+			 await context.Inventories
+			 .Where(e =>  productId.Contains(e.ProductId)  &&warehouseId.Contains(e.WarehouseId) && !e.Products.IsDeleted)
+			 .ToListAsync();
 
 	}
 }

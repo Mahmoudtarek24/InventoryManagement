@@ -1,5 +1,6 @@
 ﻿using Application.Constants.Enum;
 using Application.DTO_s;
+using Application.DTO_s.StockMovementDto_s;
 using Application.DTO_s.WarehouseDto_s;
 using Application.Interfaces;
 using Application.Mappings;
@@ -20,9 +21,11 @@ namespace Application.Services
 	public class WarehouseService : IWarehouseService
 	{
 		private readonly IUnitOfWork unitOfWork;
-		public WarehouseService(IUnitOfWork unitOfWork)
+		private readonly IStockMovementServices stockMovementServices;
+		public WarehouseService(IUnitOfWork unitOfWork, IStockMovementServices stockMovementServices)
 		{
 			this.unitOfWork = unitOfWork;
+			this.stockMovementServices = stockMovementServices;
 		}
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreateWarehouseAsync(CreateWarehouseDto dto)
 		{
@@ -97,6 +100,47 @@ namespace Application.Services
 
 			return  PagedResponse<List<WarehouseResponseDto>>
 				  .SimpleResponse(warehouseDtos, parameter.PageNumber, parameter.PageSize, totalCount);
+		}
+
+		public async Task SendProductsToWarehouse(PurchaseOrder purchaseOrder)  //////background job
+		{
+			var warehouse = await unitOfWork.WarehouseRepository.GetByIdAsync(purchaseOrder.WarehouseId);
+
+			if (warehouse == null)
+				throw new Exception();
+			///throw new NotFoundException("Warehouse not found");
+
+			await unitOfWork.BeginTransactionAsync();
+			foreach (var item in purchaseOrder.OrderItems)
+			{
+				if (item.ReceivedQuantity == 0)
+					continue;
+
+				var existingInventory = warehouse.Inventories.FirstOrDefault(i => i.ProductId == item.ProductId);
+
+				if (existingInventory != null)
+					existingInventory.QuantityInStock += item.ReceivedQuantity;
+				else
+				{
+					var newInventory = new Inventory
+					{
+						ProductId = item.ProductId,
+						QuantityInStock = item.ReceivedQuantity,
+						WarehouseId = warehouse.WarehouseId
+					};
+
+					await unitOfWork.InventoryRepository.AddAsync(newInventory);
+				}
+			}
+			await unitOfWork.CommitTransaction();
+
+			var recordsPurchase = purchaseOrder.OrderItems.Select(e => new RecordsPurchase
+			{
+				ProductId = e.ProductId,
+				Quantity = e.ReceivedQuantity,
+				WarehouseId = warehouse.WarehouseId
+			}).ToList();
+			await stockMovementServices.RecordPurchaseAsync(recordsPurchase);
 		}
 	}
 }

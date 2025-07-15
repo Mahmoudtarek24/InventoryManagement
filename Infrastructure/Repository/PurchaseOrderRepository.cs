@@ -24,7 +24,7 @@ namespace Infrastructure.Repository
 				               .SingleOrDefaultAsync(e => e.PurchaseOrderId == purchaseOrderId);
 
 		public async Task<PurchaseOrder?> GetPurchaseOrderWithItemsAndSupplierAsync(int purchaseOrderId) =>
-		    	 await context.PurchaseOrders.AsNoTracking().Include(po => po.Supplier).Include(po => po.OrderItems)
+		    	 await context.PurchaseOrders.Include(po => po.Supplier).Include(po => po.OrderItems)
 			    .ThenInclude(oi => oi.Product)
 			    .FirstOrDefaultAsync(po => po.PurchaseOrderId == purchaseOrderId && !po.IsDeleted);
 
@@ -41,7 +41,7 @@ namespace Infrastructure.Repository
 
 			if (!string.IsNullOrEmpty(query.searchTearm))
 				purchaseOrderQuery = purchaseOrderQuery.Where(po =>
-					po.Supplier.CompanyName.Contains(query.searchTearm, StringComparison.OrdinalIgnoreCase) ||
+					po.Supplier.CompanyName.Contains(query.searchTearm) ||
 					po.PurchaseOrderId.ToString().Contains(query.searchTearm));
 
 			int totalCount = await purchaseOrderQuery.CountAsync();

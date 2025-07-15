@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <Folder Include="DTO%27s\InventoryDto%27s\" />
-    <Folder Include="ResponseDTO%27s\StockMovementResponse\" />
   </ItemGroup>
 
 </Project>

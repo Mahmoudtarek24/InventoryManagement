@@ -9,5 +9,8 @@ namespace Domain.Interface
 {
 	public interface IStockMovementRepository :IGenaricRepository<StockMovement>
 	{
+		Task<List<StockMovement>> GetStockMovementsByProductAsync(int productId, int pageNumber);
+		Task<List<StockMovement>> GetStockMovementsByWarehouseAsync(int warehouseId, int pageNumber);
+
 	}
 }

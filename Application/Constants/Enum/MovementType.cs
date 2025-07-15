@@ -8,18 +8,16 @@ using System.Threading.Tasks;
 namespace Application.Constants.Enum
 {
 	[JsonConverter(typeof(JsonStringEnumConverter))]
-	public enum ConfirmationStatus
+	public enum MovementType
 	{
-		SoftDeleted,
-		HardDeleted,
-		Created,
-		Failed,
-		Activated,
-		Deactivated,
-		Updated,
-		upload,
-		Cancelled,
-		register,
-		Warning
+		ReceivedFromSupplier = 1,
+		ReturnedToSupplier = 2,
+		ManualAdjustmentIncrease = 3,
+		ManualAdjustmentDecrease = 4,
+		TransferIn = 5,
+		TransferOut = 6,
+		Sale = 7,
+		SaleReturn = 8,
+		InventoryCorrection = 9
 	}
 }

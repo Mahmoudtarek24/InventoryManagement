@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Application.Constants.Enum
 {
 	[JsonConverter(typeof(JsonStringEnumConverter))]
-	public enum PurchaseOrderStatus
+	public enum PurchaseStatus
 	{
 		Draft = 0,
 		Sent = 1,

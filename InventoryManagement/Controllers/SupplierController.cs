@@ -106,5 +106,11 @@ namespace InventoryManagement.Controllers
 			return Ok(result);
 		}
 
+		[HttpPost("simulate-receiving/{purchaseOrderId}")]
+		public async Task<IActionResult> SupplierReceiving(int purchaseOrderId)
+		{
+			var result = await supplierService.SimulateSupplierReceivingAsync(purchaseOrderId);
+			return Ok(result);
+		}
 	}
 }

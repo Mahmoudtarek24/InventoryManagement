@@ -22,6 +22,8 @@ namespace Infrastructure.Configurations
 			builder.HasOne(e => e.Product)
 				.WithMany(p => p.PurchaseOrderItems)
 				.HasForeignKey(e => e.ProductId);
+
+			builder.HasIndex(e => new { e.ProductId, e.PurchaseOrderId }).IsUnique();
 		}
 	}
 }

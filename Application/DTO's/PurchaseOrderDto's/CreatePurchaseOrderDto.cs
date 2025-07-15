@@ -1,4 +1,5 @@
-﻿using Domain.Enum;
+﻿using Application.Constants.Enum;
+using Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Application.DTO_s.PurchaseOrder
 		public int SupplierId { get; set; }
 		public int WarehouseId { get; set; }
 		public DateTime ExpectedDeliveryDate { get; set; }
-		public PurchaseOrderStatus purchaseOrderStatus { get; set; }	
-		public List<PurchaseOrderItemDto> purchaseOrderItemDtos { get; set; }	= new List<PurchaseOrderItemDto>();	   
+		public PurchaseStatus purchaseOrderStatus { get; set; }
+		public List<PurchaseOrderItemDto> purchaseOrderItemDtos { get; set; } = new List<PurchaseOrderItemDto>();
 	}
 }

@@ -11,9 +11,10 @@ namespace Domain.Interface
 {
 	public interface IInventoryRepository :IGenaricRepository<Inventory>
 	{
-		Task<InventoryInfo?> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId);
+		Task<Inventory?> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId);
 		Task<(List<InventoryInfo>, int)> GetInventoryByWarehouseWithFiltersAsync(int warehouseId, BaseFilter filter);
 		Task<List<InventoryInfo>> GetInventoryByProductAsync(int productId);
 		Task<List<InventoryInfo>> GetLowStockItemsAsync(int threshold);
+		Task<List<Inventory>> GetInventorysByProductsAndWarehousesAsync(List<int> productId, List<int> warehouseId);
 	}
 }

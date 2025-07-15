@@ -1,9 +1,12 @@
-﻿using Application.ResponseDTO_s.CategoryResponse;
+﻿using Application.Constants.Enum;
+using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.InventoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
 using Application.ResponseDTO_s.PurchaseOrder;
+using Application.ResponseDTO_s.StockMovementResponse;
 using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Entity;
+using Domain.Enum;
 using Domain.QueryParameters;
 using System;
 using System.Collections.Generic;
@@ -130,7 +133,7 @@ namespace Application.Mappings
 
 			};
 		}
-		public static InventoryResponseDto ToResponseDto(this InventoryInfo inventory)
+		public static InventoryResponseDto ToResponseDto(this InventoryInfo inventory)  //////شوف لو عايزا تبا تتمسح
 		{
 			return new InventoryResponseDto
 			{
@@ -140,6 +143,18 @@ namespace Application.Mappings
 				QuantityInStock = inventory.QuantityInStock,
 				WarehouseId = inventory.WarehouseId,
 				SerialNumber = inventory.SerialNumber,
+			};
+		}
+		public static InventoryResponseDto ToResponseDto(this Inventory inventory)
+		{
+			return new InventoryResponseDto
+			{
+				InventoryId = inventory.InventoryId,
+				ProductId = inventory.ProductId,
+				ProductName = inventory.Products.Name,
+				QuantityInStock = inventory.QuantityInStock,
+				WarehouseId = inventory.WarehouseId,
+				SerialNumber = inventory.Warehouse.SerialNumber,
 			};
 		}
 		public static LowStockAlertDto ToLowStockAlertDto(this InventoryInfo inventory)
@@ -153,5 +168,69 @@ namespace Application.Mappings
 				SerialNumber = inventory.SerialNumber,
 			};
 		}
+		public static PurchaseOrderBySupplierResponseDto ToResponseSupplierDto(this PurchaseOrder po)
+		{
+			return new PurchaseOrderBySupplierResponseDto
+			{
+				PurchaseOrderId = po.PurchaseOrderId,
+				ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+				TotalCost = po.TotalCost,
+				PurchaseOrderStatus = po.PurchaseOrderStatus,
+				NumberOfItems = po.OrderItems?.Count ?? 0
+			};
+		}
+		public static StockMovementResponseDto ToProductResponseDto(this StockMovement movement) 
+		{
+			var warehouseName = GetWarehouseName(movement);
+			return new StockMovementResponseDto
+			{
+				MovementDate = movement.MovementDate,
+				MovementType =(MovementType)movement.MovementType,
+				Quantity = movement.Quantity,
+				ProductName = movement.Product.Name,
+				WarehouseName = warehouseName,
+				UnitPrice = GetUnitPrice(movement),
+				SourceWarehouseName = warehouseName is null ? movement.SourceWarehouse?.SerialNumber : null,
+				DestinationWarehouseName = warehouseName is null ? movement.DestinationWarehouse?.SerialNumber : null
+			};
+		}
+		public static StockMovementResponseDto ToWarehouseResponseDto(this StockMovement movement)
+		{
+			return new StockMovementResponseDto
+			{
+				MovementDate = movement.MovementDate,
+				MovementType = (MovementType)movement.MovementType,
+				Quantity = movement.Quantity,
+				ProductName = movement.Product.Name,
+				WarehouseName = null,
+				UnitPrice = GetUnitPriceForWarehouse(movement),
+				SourceWarehouseName =  movement.SourceWarehouse?.SerialNumber ,
+				DestinationWarehouseName =  movement.DestinationWarehouse?.SerialNumber 
+			};
+		}
+		private static decimal? GetUnitPrice(StockMovement movement)
+		{
+			if (movement.MovementType != StockMovementType.ReceivedFromSupplier)
+				return null;
+
+			var item = movement.Product?.PurchaseOrderItems
+				?.FirstOrDefault(e => e.ProductId == movement.prodcutId);
+
+			return item?.UnitPrice;
+		}
+		private static decimal? GetUnitPriceForWarehouse(StockMovement movement) 
+		{
+			var item = movement.Product?.PurchaseOrderItems
+				?.FirstOrDefault(e => e.ProductId == movement.prodcutId);
+			return item?.UnitPrice;
+		}
+		private static string? GetWarehouseName(StockMovement movement)
+		{
+			if (movement.MovementType == StockMovementType.TransferIn || movement.MovementType == StockMovementType.TransferOut)
+				return null;
+
+			return movement.SourceWarehouse.SerialNumber;
+		}
 	}
 }
+
