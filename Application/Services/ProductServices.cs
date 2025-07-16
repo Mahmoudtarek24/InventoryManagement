@@ -11,12 +11,7 @@ using Application.ResponseDTO_s.PurchaseOrder;
 using Domain.Entity;
 using Domain.Interface;
 using Domain.Parameters;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services
 {
@@ -27,7 +22,7 @@ namespace Application.Services
 		private readonly IUserContextService userContextService;
 		private readonly RoleBasedSupplierMapper mapper;
 		public ProductServices(IUnitOfWork unitOfWork, IUriService uriService, IUserContextService userContextService
-			                  ,RoleBasedSupplierMapper mapper)
+							  , RoleBasedSupplierMapper mapper)
 		{
 			this.unitOfWork = unitOfWork;
 			this.uriService = uriService;
@@ -39,15 +34,14 @@ namespace Application.Services
 		{
 			bool categoryExists = await unitOfWork.CategoryRepository.IsValidCategoryIdAsync(dto.CategoryId);
 			if (!categoryExists)
-				throw new Exception();
-			//  throw new NotFoundException($"Category with ID '{dto.CategoryId}' not found.");
+				return ApiResponse<ProductResponseDto>.Failuer(404, $"Category with ID '{dto.CategoryId}' not found.");
+			//  
 
 			bool nameExists = await unitOfWork.ProductRepository.IsDuplicateProductNameInCategoryAsync(dto.Name, dto.CategoryId);
 			if (nameExists)
-				throw new Exception();
-			//throw new ConflictException($"Product with name '{dto.Name}' already exists.");
+				return ApiResponse<ProductResponseDto>.ValidationError($"Product with name '{dto.Name}' already exists.");
 
-			var supplier= await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
 			var product = new Product
 			{
 				Name = dto.Name,
@@ -55,25 +49,25 @@ namespace Application.Services
 				CategoryId = dto.CategoryId,
 				CreateOn = DateTime.Now,
 				IsAvailable = true,
-				SupplierId=supplier.SupplierId
+				SupplierId = supplier.SupplierId
 			};
-			product.Barcode = await GenerateBarcode(product);
+			//product.Barcode = await GenerateBarcode(product);
 
 			await unitOfWork.BeginTransactionAsync();
 			await unitOfWork.ProductRepository.AddAsync(product);
 			await unitOfWork.CommitTransaction();
 
-			var response = product.ToResponseDto();
+			var response = product.ToResponseDto(userContextService);
 			return ApiResponse<ProductResponseDto>.Success(response, 201, $"Product with id: {product.ProductId} created successfully");
 		}
+
 		public async Task<ApiResponse<ProductResponseDto>> GetProductByIdAsync(int id)
 		{
 			var product = await unitOfWork.ProductRepository.GetByIdAsync(id);
 			if (product == null)
-				throw new Exception();
-			//throw new NotFoundException($"Product with ID '{id}' not found.");
+				return ApiResponse<ProductResponseDto>.Failuer(404, $"Category with ID '{id}' not found.");
 
-			var response = product.ToResponseDto();
+			var response = product.ToResponseDto(userContextService);
 			return ApiResponse<ProductResponseDto>.Success(response, 200, "Product retrieved successfully");
 		}
 
@@ -119,7 +113,8 @@ namespace Application.Services
 			};
 
 			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsWithFiltersAsync(parameter);
-			var productDtos = products.Select(c => c.ToResponseDto()).ToList();
+			var productDtos = products.Select(c => c.ToResponseDto(userContextService)).ToList();
+
 			var message = !productDtos.Any() ? "No products found matching your criteria." : null;
 
 			var pagedResult = PagedResponse<List<ProductResponseDto>>.SimpleResponse(productDtos, parameter.PageNumber, parameter.PageSize, totalCount, message);
@@ -130,14 +125,12 @@ namespace Application.Services
 		{
 			var product = await unitOfWork.ProductRepository.GetByIdAsync(productId);
 			if (product == null)
-				throw new Exception();
-			//throw new NotFoundException($"Product with ID '{productId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Product with ID '{productId}' not found.");
 
-			// Check if the product is already in the requested status
 			if (product.IsAvailable == status)
 			{
 				var currentStatusMessage = status ? "available" : "unavailable";
-				//throw new ConflictException($"Product with ID {productId} is already {currentStatusMessage}.");
+				return ApiResponse<ConfirmationResponseDto>.Success(null, 200, $"Product with ID {productId} is already {currentStatusMessage}.");
 			}
 
 			await unitOfWork.BeginTransactionAsync();
@@ -154,14 +147,13 @@ namespace Application.Services
 			};
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
+
 		public async Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId)
 		{
 			var category = await unitOfWork.CategoryRepository.GetIfExistsAndNotDeletedAsync(categoryId);
 			if (category is null)
-				throw new Exception();
-			//throw new NotFoundException($"Category with ID '{categoryId}' not found.");
+				return ApiResponse<List<ProductWithCategoryRespondDto>>.Failuer(404, $"Category with ID '{categoryId}' not found.");
 
-			// Get products by category
 			var products = await unitOfWork.ProductRepository.GetProductsByCategoryAsync(categoryId);
 
 			var response = products.Select(p => p.ToResponseDtoWithCategory()).ToList();
@@ -171,68 +163,6 @@ namespace Application.Services
 				: $"No products found for category ID {categoryId}.";
 
 			return ApiResponse<List<ProductWithCategoryRespondDto>>.Success(response, 200, message);
-		}
-
-
-		public async Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos)
-		{
-			var Warrning = new List<string>();
-			var validDtos = new List<CreateProductDto>();
-
-			var categoryIds = dtos.Select(dto => dto.CategoryId).Distinct().ToList();
-			var validCategoryIds = await unitOfWork.CategoryRepository.GetValidCategoryIdsAsync(categoryIds);
-
-			if (!validCategoryIds.Any())
-				throw new Exception();
-				///throw new NotFoundException("No valid categories found. All provided CategoryIds are invalid.");
-
-			foreach (var dto in dtos)
-			{
-				if (!validCategoryIds.Contains(dto.CategoryId))
-					Warrning.Add($"Category with ID '{dto.CategoryId}' not found.");
-				else
-					validDtos.Add(dto); 
-			}
-
-			var productNamesByCategory = validDtos.GroupBy(e => e.CategoryId)
-		                           .ToDictionary(e=> e.Key, e => e.Select(e => e.Name).ToList());
-
-			var existingProducts = await unitOfWork.ProductRepository
-                                    		.GetExistingProductNamesInCategoriesAsync(productNamesByCategory);
-			
-			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
-
-			var finalValidDtos = new List<CreateProductDto>();
-			foreach (var dto in dtos)
-			{
-				if (existingProducts.ContainsKey(dto.CategoryId) &&
-						   existingProducts[dto.CategoryId].Contains(dto.Name))
-					Warrning.Add($"Product with name '{dto.Name}' already exists in category '{dto.CategoryId}'.");
-				else
-					finalValidDtos.Add(dto);
-			}
-
-			if (!Warrning.Any())
-				throw new Exception();
-			//return ApiResponse<List<ProductResponseDto>>.Error(Warrning);.//////////////////////////////
-
-			var products = finalValidDtos.Select(e=> new Product
-			{
-				Name = e.Name,
-				Price = e.Price,
-				CategoryId = e.CategoryId,
-				CreateOn = DateTime.Now,
-				IsAvailable = true,
-				SupplierId = supplier.SupplierId
-			}).ToList();
-
-			await unitOfWork.BeginTransactionAsync();
-			await unitOfWork.ProductRepository.AddRangeAsync(products);
-			await unitOfWork.CommitTransaction();
-
-		
-			var responseDtos = products.Select(e=>e.ToResponseDto()).ToList();	
-			return ApiResponse<List<ProductResponseDto>>.Success(responseDtos,201);
 		}
 		private async Task<string> GenerateBarcode(Product product) ///// convert it to back ground job
 		{
@@ -255,38 +185,191 @@ namespace Application.Services
 					200,
 					"No purchase history found for this product.");
 
-			var historyDtos = purchaseHistoryItems.Select(e=>e.ToResponseDto()).ToList();	
+			var historyDtos = purchaseHistoryItems.Select(e => e.ToResponseDto()).ToList();
 
-			return ApiResponse<List<PurchaseHistoryProductResponseDto>>.Success(historyDtos,200,
-				                      $"Found {historyDtos.Count} purchase history records for the product.");
+			return ApiResponse<List<PurchaseHistoryProductResponseDto>>.Success(historyDtos, 200,
+									  $"Found {historyDtos.Count} purchase history records for the product.");
 		}
-
-		public async Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(string supplierId, bool IsSupplier, SupplierProductsQueryParameters qP)
+		public async Task<ApiResponse<ProductsBySupplierResponseDto>> GetProductsBySupplierAsync(string supplierId, PaginationQueryParameters qP)
 		{
 			string actualSupplierId = supplierId;
-			if (IsSupplier)
+
+			if (userContextService.IsSupplier)
 			{
-				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
-				if (supplier == null)
-				{
-					throw new UnauthorizedAccessException("Supplier not found");
-				}
-				actualSupplierId = supplier.SupplierId.ToString();
+				var supplie = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
+
+				if (supplie is null)
+					return ApiResponse<ProductsBySupplierResponseDto>.Failuer(404, "Supplier not found.");
+
+				actualSupplierId = supplie.SupplierId.ToString();
 			}
+
 			var parameter = new BaseFilter()
 			{
 				PageNumber = qP.PageNumber,
 				PageSize = qP.PageSize,
-				searchTearm = qP.searchTearm,
-				SortAscending = qP.SortAscending,
-				SortBy = qP.SortOption.ToString(),
 			};
-			var (totalCount, products) = await unitOfWork.ProductRepository
-				              .GetProductsBySupplierAsync(int.Parse(actualSupplierId), parameter);
-			var productDtos = products.Select(product => mapper.MapProductToSupplierResponseDto(product)).ToList();
 
-			return PagedResponse<List<ProductsBySupplierResponseDto>>
-				           .SimpleResponse(productDtos, qP.PageNumber, qP.PageSize, totalCount);
+			if (!int.TryParse(actualSupplierId, out int supplierIdInt))
+				return ApiResponse<ProductsBySupplierResponseDto>.Failuer(400, "Invalid supplier ID format.");
+
+			var (totalCount, products) = await unitOfWork.ProductRepository
+												 .GetProductsBySupplierAsync(supplierIdInt, parameter);
+
+			if (products == null || !products.Any())
+				return ApiResponse<ProductsBySupplierResponseDto>.Success(null, 200, "No products found for this supplier.");
+
+			var productDtos = products.Select(product => mapper.MapProductToResponseDto(product)).ToList();
+
+			var supplier = products.FirstOrDefault(p => p.SupplierId == supplierIdInt)?.Supplier;
+
+			var supplierDto = mapper.MapSupplierToResponseDto(supplier);
+
+			var productPageResponse = PagedResponse<List<ProductBaseRespondDto>>
+										.SimpleResponse(productDtos, qP.PageNumber, qP.PageSize, totalCount);
+
+			supplierDto.SupplierProducts = productPageResponse;
+
+			return ApiResponse<ProductsBySupplierResponseDto>.Success(supplierDto, 200);
+		}
+
+		public async Task<ApiResponse<List<ProductResponseDto>>> BulkCreateProductsAsync(List<CreateProductDto> dtos)
+		{
+			var warnings = new List<string>();
+			var validDtos = new List<CreateProductDto>();
+
+			var categoryIds = dtos.Select(dto => dto.CategoryId).Distinct().ToList();
+			var validCategoryIds = await unitOfWork.CategoryRepository.GetValidCategoryIdsAsync(categoryIds);
+
+			if (!validCategoryIds.Any())
+				return ApiResponse<List<ProductResponseDto>>.ValidationError("No valid categories found. All provided CategoryIds are invalid.");
+
+			foreach (var dto in dtos)
+			{
+				if (!validCategoryIds.Contains(dto.CategoryId))
+					warnings.Add($"Category with ID '{dto.CategoryId}' not found.");
+				else
+					validDtos.Add(dto);
+			}
+
+			var productNamesByCategory = validDtos.GroupBy(e => e.CategoryId)
+									   .ToDictionary(g => g.Key, g => g.Select(item => item.Name).ToList());
+
+			var existingProducts = await unitOfWork.ProductRepository
+										  .GetExistingProductNamesInCategoriesAsync(productNamesByCategory);
+
+			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+			if (supplier is null)
+				return ApiResponse<List<ProductResponseDto>>.ValidationError("Supplier not found for current user.");
+
+			var validatedItems = new List<CreateProductDto>();
+			foreach (var dto in validDtos)
+			{
+				if (existingProducts.ContainsKey(dto.CategoryId) &&
+					existingProducts[dto.CategoryId].Contains(dto.Name))
+					warnings.Add($"Product with name '{dto.Name}' already exists in category '{dto.CategoryId}'.");
+				else
+					validatedItems.Add(dto);
+			}
+
+			if (!validatedItems.Any())
+				return ApiResponse<List<ProductResponseDto>>.ValidationError(warnings);
+
+			var products = validatedItems.Select(dto => new Product
+			{
+				Name = dto.Name,
+				Price = dto.Price,
+				CategoryId = dto.CategoryId,
+				CreateOn = DateTime.UtcNow,
+				IsAvailable = true,
+				SupplierId = supplier.SupplierId
+			}).ToList();
+
+			await unitOfWork.BeginTransactionAsync();
+			await unitOfWork.ProductRepository.AddRangeAsync(products);
+			await unitOfWork.CommitTransaction();
+
+
+			var responseDtos = products.Select(product => product.ToResponseDto(userContextService)).ToList();
+			if (warnings.Any())
+				return ApiResponse<List<ProductResponseDto>>.SuccessWithWarnings(responseDtos, 200, warnings);
+
+			return ApiResponse<List<ProductResponseDto>>.Success(responseDtos, 200);
+		}
+
+
+		public async Task<ApiResponse<ConfirmationResponseDto>> BulkUpdateProductPricesAsync(List<UpdateProductPriceDto> dtos)
+		{
+			var warnings = new List<string>();
+			var validatedItems = new List<(UpdateProductPriceDto dto, Product product)>();
+
+			var productIds = dtos.Select(dto => dto.ProductId).Distinct().ToList();
+
+			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+			if (supplier == null)
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, "Supplier not found for current user.");
+
+			var existingProducts = await unitOfWork.ProductRepository
+										  .GetProductsByIdsAndSupplierAsync(productIds, supplier.SupplierId);
+
+			if (!existingProducts.Any())
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, "No valid products found for the current supplier.");
+
+			var productLookup = existingProducts.ToDictionary(p => p.ProductId, p => p);
+
+			foreach (var dto in dtos)
+			{
+				if (!productLookup.TryGetValue(dto.ProductId, out var product))
+				{
+					warnings.Add($"Product with ID '{dto.ProductId}' not found or doesn't belong to current supplier.");
+					continue;
+				}
+
+				if (dto.NewPrice <= 0)
+				{
+					warnings.Add($"Invalid price '{dto.NewPrice}' for Product ID '{dto.ProductId}'. Price must be greater than 0.");
+					continue;
+				}
+
+				if (product.Price == dto.NewPrice)
+				{
+					warnings.Add($"Product ID '{dto.ProductId}' already has the same price '{dto.NewPrice}'.");
+					continue;
+				}
+
+				validatedItems.Add((dto, product));
+			}
+
+			if (!validatedItems.Any())
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("No valid price updates could be processed.");
+
+			await unitOfWork.BeginTransactionAsync();
+			var totalUpdatedProducts = 0;
+			var priceChangesDetails = new List<string>();
+
+			foreach (var (updateDto, product) in validatedItems)
+			{
+				var oldPrice = product.Price;
+
+				product.Price = updateDto.NewPrice;
+				product.LastUpdateOn = DateTime.UtcNow;
+
+				totalUpdatedProducts++;
+				priceChangesDetails.Add($"Product ID {product.ProductId}: {oldPrice:C} → {updateDto.NewPrice:C}");
+			}
+
+			await unitOfWork.CommitTransaction();
+
+			var successResponse = new ConfirmationResponseDto
+			{
+				Message = $"Price update completed successfully for {totalUpdatedProducts} products. {validatedItems.Count} out of {dtos.Count} products processed successfully.",
+				status = ConfirmationStatus.register
+			};
+
+			if (warnings.Any())
+				return ApiResponse<ConfirmationResponseDto>.SuccessWithWarnings(successResponse, 200, warnings);
+
+			return ApiResponse<ConfirmationResponseDto>.Success(successResponse, 200);
 		}
 	}
 }

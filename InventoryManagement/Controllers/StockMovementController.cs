@@ -54,14 +54,11 @@ namespace InventoryManagement.Controllers
 			return Ok(result);
 		}
 
-		//[HttpGet]
-		//public async Task<IActionResult> GetStockMovements([FromQuery] StockMovementQueryParameters query)
-		//{
-		//	var result = await stockMovementService.GetStockMovementsAsync(query);
-		//	return Ok(result);
-		//}
-
-
-
+		[HttpGet("all")]
+		public async Task<IActionResult> GetStockMovements([FromQuery] StockMovementQueryParameters query)
+		{
+			var result = await stockMovementService.GetStockMovementsAsync(query);
+			return Ok(result);
+		}
 	}
 }

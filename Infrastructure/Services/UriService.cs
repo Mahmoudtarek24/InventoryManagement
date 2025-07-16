@@ -37,7 +37,7 @@ namespace Infrastructure.Services
 			var endPointUri = new Uri(string.Concat(BaseUri, route));
 
 			var modifiedUri = QueryHelpers.AddQueryString(endPointUri.ToString(), "pageNumber", pageNumber.ToString());
-			modifiedUri = QueryHelpers.AddQueryString(modifiedUri, "PageSize", PageSize.ToString());
+			modifiedUri = QueryHelpers.AddQueryString(modifiedUri, "pageSize", PageSize.ToString());
 			return new Uri(modifiedUri);
 		}
 	}

@@ -48,19 +48,15 @@ namespace Application.Services
 			// Check if email already exists
 			bool emailExists = await authService.IsEmailUniqueAsync(dto.Email);
 			if (emailExists)
-				throw new Exception();
-			// throw new ConflictException($"Supplier with email '{dto.Email}' already exists.");
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Supplier with email '{dto.Email}' already exists.");
 
 			bool companyNameExists = await unitOfWork.SupplierRepository.IsCompanyNameExistsAsync(dto.CompanyName);
 			if (companyNameExists)
-				throw new Exception();
-			// throw new ConflictException($"Supplier with company name '{dto.CompanyName}' already exists.");
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Supplier with company name '{dto.CompanyName}' already exists.");
 
-			// Check if username already exists
 			bool userNameExists = await authService.IsUserNameUniqueAsync(dto.UserName);
 			if (userNameExists)
-				throw new Exception();
-			// throw new ConflictException($"Username '{dto.UserName}' already exists.");
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("Username '{dto.UserName}' already exists.");
 
 			var userId = await authService.CreateSupplierAsync(dto);
 			var supplier = new Supplier
@@ -87,8 +83,8 @@ namespace Application.Services
 		{
 			var supplier = await unitOfWork.SupplierRepository.GetByIdAsync(supplierId);
 			if (supplier is null)
-				throw new Exception();
-			///
+				return ApiResponse<SupplierResponseDto>.Failuer(404, $"Supplier with Id '{supplierId}' Not Found ");
+			//return ApiResponse<SupplierResponseDto>.ValidationError($"Category with name '{dto.Name}' already exists.")
 
 			var productFilter = new BaseFilter
 			{

@@ -36,13 +36,10 @@ namespace Application.validations.Category
 			RuleFor(e => e.DisplayOrder)
 		   .MustAsync(BeUniqueDisplayOrderAsync).WithMessage("Display order already exists.");
 		}
-		private async Task<bool> BeUniqueNameAsync(string name, CancellationToken cancellationToken)
-		{
-			return !await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(name);
-		}
-		private async Task<bool> BeUniqueDisplayOrderAsync(int displayOrder, CancellationToken cancellationToken)
-		{
-			return !await unitOfWork.CategoryRepository.IsDisplayOrderTakenAsync(displayOrder);
-		}
+		private async Task<bool> BeUniqueNameAsync(string name, CancellationToken cancellationToken) =>
+			 !await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(name);
+
+		private async Task<bool> BeUniqueDisplayOrderAsync(int displayOrder, CancellationToken cancellationToken) =>
+			   !await unitOfWork.CategoryRepository.IsDisplayOrderTakenAsync(displayOrder);
 	}
 }

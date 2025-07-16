@@ -46,12 +46,13 @@ namespace Application.ResponseDTO_s
 			}	
 			return obj;	
 		}
-		public static ApiResponse<T> Failuer(int StatusCode, string error)
+		public static ApiResponse<T> Failuer(int StatusCode, string error,string errorCode= "NOTFOUND_ERROR")
 		{
 			return new ApiResponse<T>
 			{
 				StatusCode = StatusCode,
 				IsSuccess = false,
+				ErrorCode = errorCode,
 				ErrorMessages = new List<string> { error }
 			};
 		}
@@ -89,6 +90,27 @@ namespace Application.ResponseDTO_s
 		public static ApiResponse<T> BusinessError(string message, string errorCode = "BUSINESS_ERROR")
 		{
 			return ErrorResponse(message, errorCode, 400);
+		}
+		public static ApiResponse<T> ValidationError(string error)
+		{
+			return new ApiResponse<T>
+			{
+				StatusCode = 400,
+				IsSuccess = false,
+				ErrorCode = "VALIDATION_ERROR",
+				ErrorMessages = new List<string> { error }
+			};
+		}
+		public static ApiResponse<T> ValidationError(List<string> errors)
+		{
+			var result= new ApiResponse<T>
+			{
+				StatusCode = 400,
+				IsSuccess = false,
+				ErrorCode = "VALIDATION_ERROR",
+			};
+			result.ErrorMessages.AddRange(errors);
+			return result;	
 		}
 	}
 }

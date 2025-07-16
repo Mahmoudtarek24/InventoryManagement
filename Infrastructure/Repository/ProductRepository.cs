@@ -44,8 +44,8 @@ namespace Infrastructure.Repository
 
 			if (!string.IsNullOrEmpty(prodF.searchTearm))
 				query = query.Where(e =>
-					  e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					  e.Barcode.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase));
+					  e.Name.Contains(prodF.searchTearm) ||
+					  e.Barcode.Contains(prodF.searchTearm));
 
 			int totalCount = await query.CountAsync();
 
@@ -95,21 +95,18 @@ namespace Infrastructure.Repository
 		}
 		public async Task<(List<Product>, int)> GetProductsBySupplierWithFilterAsync(int supplierId, BaseFilter prodF)
 		{
-			var query = context.Products
+			var query = context.Products.Include(e=>e.Supplier)
 				.Where(e => !e.IsDeleted && e.SupplierId == supplierId)
 				.AsQueryable();
 
-			// Apply search filter if provided
 			if (!string.IsNullOrEmpty(prodF.searchTearm))
 			{
 				query = query.Where(e =>
-					e.Name.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase) ||
-					e.Barcode.Contains(prodF.searchTearm, StringComparison.OrdinalIgnoreCase));
+					e.Name.Contains(prodF.searchTearm) ||
+					e.Barcode.Contains(prodF.searchTearm));
 			}
-			///////في كسم حاجه عايز تتصلح
 			int totalCount = await query.CountAsync();
 
-			// Apply sorting based on SortOption enum
 			switch (prodF.SortBy.ToLower())
 			{
 				case "name":
@@ -130,11 +127,9 @@ namespace Infrastructure.Repository
 					break;
 			}
 
-			// Apply pagination
 			query = query.Skip((prodF.PageNumber - 1) * prodF.PageSize).Take(prodF.PageSize);
-
-			// Execute query and return results
 			var result = await query.ToListAsync();
+			
 			return (result, totalCount);
 		}
 
@@ -165,5 +160,10 @@ namespace Infrastructure.Repository
 			        }
 					return result;
 				}
+
+		public async Task<List<Product>> GetProductsByIdsAndSupplierAsync(List<int> productIds, int supplierId) =>
+			     await context.Products
+				.Where(p => productIds.Contains(p.ProductId) && p.SupplierId == supplierId)
+				.ToListAsync();
 	}
 }

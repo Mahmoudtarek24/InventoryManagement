@@ -9,6 +9,6 @@ namespace Application.DTO_s.ProductDto_s
 {
 	public class SupplierProductsQueryParameters : BaseQueryParameters
 	{
-		public ProductOrdering SortOption { get; set; }
+		public ProductOrdering SortBys { get; set; }
 	}
 }

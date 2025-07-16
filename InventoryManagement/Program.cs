@@ -24,6 +24,7 @@ namespace InventoryManagement
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(options =>
 			{
+				options.EnableAnnotations();	
 				options.SwaggerDoc("v1", new OpenApiInfo
 				{
 					Version = "v1",
@@ -90,40 +91,6 @@ namespace InventoryManagement
 					ClockSkew = TimeSpan.Zero,
 					RoleClaimType = ClaimTypes.Role
 				};
-				options.Events = new JwtBearerEvents
-				{
-					OnMessageReceived = context =>
-					{
-						var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-						if (!string.IsNullOrEmpty(token))
-						{
-							Console.WriteLine($"🔍 Token received: {token[..Math.Min(token.Length, 50)]}...");
-						}
-						else
-						{
-							Console.WriteLine("❌ No token found in Authorization header");
-						}
-						return Task.CompletedTask;
-					},
-					OnAuthenticationFailed = context =>
-					{
-						Console.WriteLine($"❌ JWT Authentication failed: {context.Exception.Message}");
-						Console.WriteLine($"Exception type: {context.Exception.GetType().Name}");
-						return Task.CompletedTask;
-					},
-					OnTokenValidated = context =>
-					{
-						Console.WriteLine($"✅ JWT Token validated successfully!");
-						Console.WriteLine($"User: {context.Principal.Identity.Name}");
-						Console.WriteLine($"Claims count: {context.Principal.Claims.Count()}");
-						return Task.CompletedTask;
-					},
-					OnChallenge = context =>
-					{
-						Console.WriteLine($"🔒 JWT Challenge: {context.Error}, {context.ErrorDescription}");
-						return Task.CompletedTask;
-					}
-				};
 			});
 			builder.Services.AddAuthorization();
 
@@ -150,13 +117,7 @@ namespace InventoryManagement
 
 		
 			app.UseRouting();
-			app.Use(async (context, next) =>
-			{
-				Console.WriteLine($"🔍 Request: {context.Request.Method} {context.Request.Path}");
-				var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-				Console.WriteLine($"Auth Header: {authHeader ?? "None"}");
-				await next();
-			});
+
 			app.UseAuthentication();
 			app.UseAuthorization();
 			app.UseMiddleware<UserContextMiddleware>();

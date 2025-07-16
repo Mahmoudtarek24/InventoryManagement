@@ -54,5 +54,7 @@ namespace EducationPlatform.Constants
 		public const string PositivePrice = "Price must be greater than 0.";
 		public const string DuplicatProductName = "A product with the same name already exists in this category.";
 		public const string InvalidEmailOrPassword= "Invalid email or password";
+		public const string RouteError= "The route ID does not match the Id in the request body.";
+
 	}
 }

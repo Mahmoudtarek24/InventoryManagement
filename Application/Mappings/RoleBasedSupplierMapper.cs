@@ -24,7 +24,7 @@ namespace Application.Mappings
 		public SupplierResponseDto MapSupplierToResponseDto(Supplier supplier, ProductPaginationForSupplierQuery qP)
 		{
 			var responseDto = supplier.ToBasicResponseDto();
-			var productDto = supplier.Products.Select(e => e.ToResponseDto()).ToList();
+			var productDto = supplier.Products.Select(e => e.ToResponseDto(userContextService)).ToList();
 			responseDto.Products =
 				PagedResponse<IEnumerable<ProductBaseRespondDto>>.SimpleResponse(productDto, qP.PageNumber, qP.PageSize, qP.TotalCount);
 
@@ -78,24 +78,29 @@ namespace Application.Mappings
 			existingSupplier.LastUpdateOn = DateTime.Now;
 
 		}
-		public ProductsBySupplierResponseDto MapProductToSupplierResponseDto(Product product)
+		public ProductsBySupplierResponseDto MapSupplierToResponseDto(Supplier supplier) 
 		{
 			var responseDto = new ProductsBySupplierResponseDto();
 
+			responseDto.SupplierId = supplier.SupplierId;
+			responseDto.CompanyName = supplier.CompanyName;
+			responseDto.Address = supplier.Address;
+			responseDto.IsVerified = supplier.IsVerified;
+			responseDto.VerificationStatus =(Constants.Enum.VerificationStats)supplier.VerificationStatus;
+
+			return responseDto;
+		}
+		public ProductBaseRespondDto MapProductToResponseDto(Product product)
+		{
+			var responseDto = new ProductBaseRespondDto();
+
 			// Basic product information always available
-			responseDto.ProductId = product.ProductId;
+			responseDto.ProductId= product.ProductId;
 			responseDto.Name = product.Name;
 			responseDto.Price = product.Price;
 			responseDto.CategoryId = product.CategoryId;
 			responseDto.CreateOn = product.CreateOn;
-
-			// Supplier basic information always available
-			responseDto.SupplierId = product.Supplier.SupplierId;
-			responseDto.CompanyName = product.Supplier.CompanyName;
-			responseDto.Address = product.Supplier.Address;
-			responseDto.IsVerified = product.Supplier.IsVerified;
-			responseDto.VerificationStatus = product.Supplier.VerificationStatus;
-
+		
 			// Role-based additional information
 			if (userContextService.IsAdmin || userContextService.IsInventoryManager)
 			{
@@ -103,7 +108,6 @@ namespace Application.Mappings
 				responseDto.IsAvailable = product.IsAvailable;
 				responseDto.IsDeleted = product.IsDeleted;
 				responseDto.LastUpdateOn = product.LastUpdateOn;
-				responseDto.Notes = product.Supplier.Notes;
 			}
 
 			return responseDto;

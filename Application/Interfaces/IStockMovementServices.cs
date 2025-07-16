@@ -17,7 +17,6 @@ namespace Application.Interfaces
 		Task<ApiResponse<ConfirmationResponseDto>> RecordAdjustmentAsync(AdjustmentDto dto);
 		Task<ApiResponse<List<StockMovementResponseDto>>> GetMovementsByProductAsync(int productId, int pageNumber);
 		Task<ApiResponse<List<StockMovementResponseDto>>> GetMovementsByWarehouseAsync(int warehouseId, int pageNumber);
-
-		//Task<PagedResponse<List<StockMovementListDto>>> GetStockMovementsAsync(StockMovementQueryParameters query);
+		Task<PagedResponse<List<StockMovementResponseDto>>> GetStockMovementsAsync(StockMovementQueryParameters query);
 	}
 }

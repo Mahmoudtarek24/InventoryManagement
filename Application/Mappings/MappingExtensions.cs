@@ -1,4 +1,5 @@
 ﻿using Application.Constants.Enum;
+using Application.Interfaces;
 using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.InventoryResponse;
 using Application.ResponseDTO_s.ProductResponse;
@@ -34,23 +35,22 @@ namespace Application.Mappings
 				Name = category.Name,
 			};
 		}
-		public static ProductResponseDto ToResponseDto(this Product product)
+		public static ProductResponseDto ToResponseDto(this Product product, IUserContextService userContextService)
 		{
-			if (product == null)
-				return null;
-
-			return new ProductResponseDto()
+			var response = new ProductResponseDto()
 			{
 				CategoryId = product.CategoryId,
 				CreateOn = product.CreateOn,
-				Barcode = product.Barcode,
-				IsAvailable = product.IsAvailable,
-				IsDeleted = product.IsDeleted,
-				LastUpdateOn = product.LastUpdateOn,
 				Name = product.Name,
 				Price = product.Price,
 				ProductId = product.ProductId,
 			};
+			if (userContextService.IsAdmin || userContextService.IsInventoryManager)
+			{
+				response.Barcode = product.Barcode;
+				response.IsAvailable = product.IsAvailable;
+			}
+			return response;
 		}
 		public static ProductWithCategoryRespondDto ToResponseDtoWithCategory(this Product product)
 		{
@@ -179,13 +179,13 @@ namespace Application.Mappings
 				NumberOfItems = po.OrderItems?.Count ?? 0
 			};
 		}
-		public static StockMovementResponseDto ToProductResponseDto(this StockMovement movement) 
+		public static StockMovementResponseDto ToProductResponseDto(this StockMovement movement)
 		{
 			var warehouseName = GetWarehouseName(movement);
 			return new StockMovementResponseDto
 			{
 				MovementDate = movement.MovementDate,
-				MovementType =(MovementType)movement.MovementType,
+				MovementType = (MovementType)movement.MovementType,
 				Quantity = movement.Quantity,
 				ProductName = movement.Product.Name,
 				WarehouseName = warehouseName,
@@ -204,8 +204,8 @@ namespace Application.Mappings
 				ProductName = movement.Product.Name,
 				WarehouseName = null,
 				UnitPrice = GetUnitPriceForWarehouse(movement),
-				SourceWarehouseName =  movement.SourceWarehouse?.SerialNumber ,
-				DestinationWarehouseName =  movement.DestinationWarehouse?.SerialNumber 
+				SourceWarehouseName = movement.SourceWarehouse?.SerialNumber,
+				DestinationWarehouseName = movement.DestinationWarehouse?.SerialNumber
 			};
 		}
 		private static decimal? GetUnitPrice(StockMovement movement)
@@ -218,7 +218,7 @@ namespace Application.Mappings
 
 			return item?.UnitPrice;
 		}
-		private static decimal? GetUnitPriceForWarehouse(StockMovement movement) 
+		private static decimal? GetUnitPriceForWarehouse(StockMovement movement)
 		{
 			var item = movement.Product?.PurchaseOrderItems
 				?.FirstOrDefault(e => e.ProductId == movement.prodcutId);

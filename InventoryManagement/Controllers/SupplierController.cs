@@ -7,13 +7,14 @@ using Domain.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace InventoryManagement.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
 	public class SupplierController : ControllerBase
-	{
+	{    
 		private readonly ISupplierServices supplierService;
 		private readonly IUserContextService userContextService;
 		public SupplierController(ISupplierServices supplierServices, IUserContextService userContextService)
@@ -23,10 +24,22 @@ namespace InventoryManagement.Controllers
 		}
 
 		[HttpPost]
+		[AllowAnonymous]
+		[SwaggerOperation( Summary = "Register a new supplier account",
+	    Description = @"Creates a new supplier account with associated login credentials and company details.
+		The following validations are performed before creation:
+		- The email must be unique.
+		- The username must be unique.
+		- The company name must not already exist.
+
+		If all validations pass:
+		- A user account is created for the supplier.
+		- The supplier is saved with company details.
+		- A success response is returned with confirmation.")]
 		public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierDto dto)
 		{
 			var result = await supplierService.CreateSupplierAsync(dto);
-			return Ok(result);
+			return StatusCode(result.StatusCode,result);
 		}
 
 		[HttpGet("{id}")]   ////محتاجه تظبيط 

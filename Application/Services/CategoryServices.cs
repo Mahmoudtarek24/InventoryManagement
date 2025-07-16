@@ -17,21 +17,20 @@ namespace Application.Services
 	{
 		private readonly IUnitOfWork unitOfWork ;
 		private readonly IUriService uriService ;	
-		public CategoryServices(IUnitOfWork unitOfWork,IUriService uriService)
+		private readonly IUserContextService userContextService ;	
+		public CategoryServices(IUnitOfWork unitOfWork,IUriService uriService,IUserContextService userContextService)
 		{
 			this.unitOfWork = unitOfWork ;		
 			this.uriService = uriService ;
+			this.userContextService = userContextService ;	
 		}
 		
 		public async Task<ApiResponse<CategoryResponseDto>> CreateCategoryAsync(CreateCategoryDto dto)
 		{
-			var validationErrors = new Dictionary<string, string[]>();
 			bool nameExists = await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(dto.Name);
+
 			if (nameExists)
-			{
-				validationErrors.Add("Name",new[] { "Category with name '{dto.Name}' already exists." });
-				return ApiResponse<CategoryResponseDto>.ValidationError(validationErrors);	
-			}
+				return ApiResponse<CategoryResponseDto>.ValidationError($"Category with name '{dto.Name}' already exists.");
 
 			var category = new Category
 			{
@@ -51,16 +50,13 @@ namespace Application.Services
 		public async Task<ApiResponse<CategoryResponseDto>> UpdateCategoryAsync(int id, UpdateCategoryDto dto) //work with validation and concat upade/create CategoryInputDto
 		{
 			var category = await unitOfWork.CategoryRepository.GetByIdAsync(id);
-			if (category == null)
-				throw new Exception();
-			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
+			if (category is null)
+				return ApiResponse<CategoryResponseDto>.Failuer(404,$"Category with Id '{dto.CategoryId}' Not Found ");
 
 			bool nameExists = await unitOfWork.CategoryRepository.IsCategoryNameUniqueAsync(dto.Name);
 			if (nameExists)
-				throw new Exception();
-			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
+				return ApiResponse<CategoryResponseDto>.ValidationError($"Category with name '{dto.Name}' already exists.");
 
-			
 			await unitOfWork.BeginTransactionAsync();
 			category.Name = dto.Name;
 			category.Description = dto.Description;
@@ -75,9 +71,8 @@ namespace Application.Services
 		public async Task<ApiResponse<CategoryResponseDto>> GetCategoryByIdAsync(int id)
 		{
 			var category = await unitOfWork.CategoryRepository.GetByIdAsync(id);
-			if (category == null)
+			if (category is null)
 				throw new Exception();
-			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
 
 			var response = category.ToResponseDto();
 			return ApiResponse<CategoryResponseDto>.Success(response, 200);
@@ -87,59 +82,51 @@ namespace Application.Services
 		{
 			var category = await unitOfWork.CategoryRepository.GetByIdAsync(id);
 			if (category is null)
-				throw new Exception();
-			//throw new ConflictException($"Category with name '{dto.Name}' already exists.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Category with Id '{id}' Not Found ");
 
 			var hasProducts = await unitOfWork.ProductRepository.HasProductsForCategoryAsync(id);
 			if (hasProducts)
-				throw new Exception();
-			//throw throw new ConflictException($"Cannot delete category with ID {id} because it has related products.");
-
-
+				return ApiResponse<ConfirmationResponseDto>
+					          .Failuer(401, $"Cannot delete category with ID {id} because it has related products.");
+			
 			await unitOfWork.BeginTransactionAsync();
 			category.LastUpdateOn = DateTime.Now;
 			category.IsDeleted = !category.IsDeleted;
 			await unitOfWork.CommitTransaction();
 
 			var action = category.IsDeleted ? "soft-deleted" : "restored";
+			var status = category.IsDeleted ? ConfirmationStatus.SoftDeleted : ConfirmationStatus.Restored;
+
 			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
 			{
 				Message = $"Category with ID {category.CategoryId} was {action} successfully.",
-				status = ConfirmationStatus.SoftDeleted
+				status = status
 			};
 
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(BaseQueryParameters categoryQuery,string route)
+		public async Task<PagedResponse<List<CategoryResponseDto>>> GetCategoriesWithPaginationAsync(PaginationQueryParameters paginationQuery)
 		{
 			var parameter = new BaseFilter()
 			{
-				PageNumber = categoryQuery.PageNumber,
-				PageSize = categoryQuery.PageSize,
-				searchTearm = categoryQuery.searchTearm,
-				SortAscending = categoryQuery.SortAscending,
-				SortBy = categoryQuery.SortBy,
+				PageNumber = paginationQuery.PageNumber,
+				PageSize = paginationQuery.PageSize,
 			};
 
 			var (categories, totalCount) =await unitOfWork.CategoryRepository.GetCategorysWithFiltersAsync(parameter);
 
-			if (categories == null || !categories.Any())
-				throw new Exception();
-			//throw new NotFoundException("No categories found.");
-
 			var categoryDtos = categories.Select(c => c.ToResponseDto()).ToList();
-			var pagedResult =  PagedResponse<List<CategoryResponseDto>>.SimpleResponse(categoryDtos, parameter.PageNumber, parameter.PageSize, totalCount);
-			return pagedResult.AddPagingInfo(totalCount, uriService, route);
+			var pagedResult = PagedResponse<List<CategoryResponseDto>>.SimpleResponse(categoryDtos, parameter.PageNumber, parameter.PageSize, totalCount);
+			return pagedResult.AddPagingInfo(totalCount, uriService, userContextService.Route);
 		}
-
+		  
 		public async Task<ApiResponse<List<CategoryResponseDto>>> GetAllCategoryAsync()
 		{
 			var categories = await unitOfWork.CategoryRepository.GetAllActiveCategoryAsync();
 			
-			if (categories == null || !categories.Any())
-				throw new Exception();
-			//throw new NotFoundException("No categories found.");
+			if (categories is null || !categories.Any())
+				return ApiResponse<List<CategoryResponseDto>>.Success(null, 200, "No categories found");
 
 			var categoryDtos = categories.Select(c => c.ToResponseDto()).ToList();
 			return ApiResponse<List<CategoryResponseDto>>.Success(categoryDtos, 200);

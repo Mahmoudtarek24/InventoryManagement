@@ -22,12 +22,9 @@ namespace Application.Interfaces
 		Task<PagedResponse<List<ProductResponseDto>>> GetProductsWithPaginationAsync(BaseQueryParameters productQuery);
 		Task<ApiResponse<List<ProductWithCategoryRespondDto>>> GetProductsByCategoryAsync(int categoryId);
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeAvailabilityAsync(int productId, bool status);
-		Task<PagedResponse<List<ProductsBySupplierResponseDto>>> GetProductsBySupplierAsync(string supplierId,bool IsSupplier ,SupplierProductsQueryParameters qP);
+		Task<ApiResponse<ProductsBySupplierResponseDto>> GetProductsBySupplierAsync(string supplierId, PaginationQueryParameters qP);
 
-		//Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(int id, UpdateProductDto dto); //dint change name if have quentity on stick
-		//Task<ApiResponse<List<ProductStockAlertDto>>> GetDeletedProductsWithStockAsync();
 		 Task<ApiResponse<List<PurchaseHistoryProductResponseDto>>> GetProductPurchaseHistoryAsync(int productId); //on report controller 
-		
-
+		Task<ApiResponse<ConfirmationResponseDto>> BulkUpdateProductPricesAsync(List<UpdateProductPriceDto> dtos);
 	}
 }

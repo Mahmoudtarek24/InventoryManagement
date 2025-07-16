@@ -18,7 +18,7 @@ namespace Infrastructure.Configurations
 			builder.Property(e => e.Price).HasPrecision(9, 3);
 			builder.HasCheckConstraint("CK_Price_Positive", "[Price] >0");
 			builder.HasOne(e=>e.Category).WithMany(e=>e.Products).HasForeignKey(e=>e.CategoryId);
-			builder.HasIndex(e => new { e.Name, e.CategoryId }).HasFilter("[IsDeleted] =0");
+			builder.HasIndex(e => new { e.Name, e.CategoryId, e.SupplierId }).HasFilter("[IsDeleted] =0");//composite index
 
 		}
 	}

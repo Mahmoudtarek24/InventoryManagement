@@ -7,6 +7,7 @@ using Application.ResponseDTO_s.StockMovementResponse;
 using Domain.Entity;
 using Domain.Enum;
 using Domain.Interface;
+using Domain.QueryParameters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +19,13 @@ namespace Application.Services
 	public class StockMovementServices : IStockMovementServices
 	{
 		private readonly IUnitOfWork unitOfWork;
-		public StockMovementServices(IUnitOfWork unitOfWork)
+		private readonly IUriService uriService;	
+		private readonly IUserContextService userContextService;
+		public StockMovementServices(IUnitOfWork unitOfWork,IUserContextService userContextService ,IUriService uriService)
 		{
 			this.unitOfWork = unitOfWork;
+			this.userContextService = userContextService;
+			this.uriService = uriService;
 		}
 		public async Task RecordPurchaseAsync(List<RecordsPurchase> dto)
 		{
@@ -314,6 +319,37 @@ namespace Application.Services
 
 			var responseDtos = warehousMovements.Select(movement => movement.ToWarehouseResponseDto()).ToList();
 			return ApiResponse<List<StockMovementResponseDto>>.Success(responseDtos, 200);
+		}
+
+		public async Task<PagedResponse<List<StockMovementResponseDto>>> GetStockMovementsAsync(StockMovementQueryParameters query)
+		{
+			var filter = new StockMovementFilter
+			{
+				PageNumber = query.PageNumber,
+				PageSize = query.PageSize,
+				searchTearm = query.searchTearm,
+				SortAscending = query.SortAscending,
+				SortBy = query.StockMovementOrdering.ToString(),
+				WarehouseId = query.WarehouseId,
+				ProductId = query.ProductId,
+				MovementType = query.MovementType.ToString(),
+				DateFrom = query.DateFrom,
+				DateTo = query.DateTo
+			};
+
+			var (totalCount, stockMovements) = await unitOfWork.StockMovementRepository
+				                                     .GetStockMovementsWithFiltersAsync(filter);
+
+			if (totalCount == 0)
+				return PagedResponse<List<StockMovementResponseDto>>.SimpleResponse(null,query.PageNumber,query.PageSize,0
+					, "No stock movements found matching the specified criteria.");
+
+		
+			var stockMovementDtos = stockMovements.Select(e => e.ToWarehouseResponseDto()).ToList();
+			var pagedResponse = PagedResponse<List<StockMovementResponseDto>>.SimpleResponse( stockMovementDtos,
+				query.PageNumber, query.PageSize, totalCount);
+
+			return pagedResponse.AddPagingInfo(totalCount, uriService, userContextService.Route);
 		}
 	}
 }
