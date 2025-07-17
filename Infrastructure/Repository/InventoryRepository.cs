@@ -20,21 +20,19 @@ namespace Infrastructure.Repository
 
 
 		public async Task<Inventory?> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId) =>
-		         await context.Inventories
+		         await context.Inventories.Include(e=>e.Products).Include(e=>e.Warehouse)	
 				 .Where(i => i.ProductId == productId && i.WarehouseId == warehouseId && !i.Products.IsDeleted)
 				 .FirstOrDefaultAsync();
 
 		public async Task<(List<InventoryInfo>, int)> GetInventoryByWarehouseWithFiltersAsync
 																				   (int warehouseId, BaseFilter filter)
 		{
-			var query = context.Inventories
+			var query = context.Inventories.Include(e => e.Products)
 				.Where(i => i.WarehouseId == warehouseId &&!i.Products.IsDeleted ).AsQueryable();
 
 			if (!string.IsNullOrEmpty(filter.searchTearm))
-			{
 				query = query.Where(i =>
-					i.Products.Name.Contains(filter.searchTearm, StringComparison.OrdinalIgnoreCase));
-			}
+					i.Products.Name.Contains(filter.searchTearm));
 
 			int totalCount = await query.CountAsync();
 	
@@ -48,11 +46,11 @@ namespace Infrastructure.Repository
 			return (result, totalCount);
 		}
 		public async Task<List<InventoryInfo>> GetInventoryByProductAsync(int productId) =>
-				 await context.Inventories.Where(i => i.ProductId == productId)
+				 await context.Inventories.Where(i => i.ProductId == productId).Include(e=>e.Products)
 								.Select(InventoryProjection).ToListAsync();
 
 		public async Task<List<InventoryInfo>> GetLowStockItemsAsync(int threshold) =>
-	               await context.Inventories.Where(e=>e.QuantityInStock <= threshold)
+	               await context.Inventories.Include(e => e.Products).Where(e=>e.QuantityInStock <= threshold)
 		                        .Select(InventoryProjection).ToListAsync();
 
 		private static Expression<Func<Inventory, InventoryInfo>> InventoryProjection =>
@@ -68,7 +66,7 @@ namespace Infrastructure.Repository
 
 
 		public async Task<List<Inventory>> GetInventorysByProductsAndWarehousesAsync(List<int> productId,List<int> warehouseId) =>
-			 await context.Inventories
+			 await context.Inventories.Include(e => e.Products)
 			 .Where(e =>  productId.Contains(e.ProductId)  &&warehouseId.Contains(e.WarehouseId) && !e.Products.IsDeleted)
 			 .ToListAsync();
 

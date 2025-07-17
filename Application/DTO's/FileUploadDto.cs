@@ -9,6 +9,6 @@ namespace Application.DTO_s
 {
 	public class FileUploadDto
 	{
-		public IFormFile File { get; set; }
+		public IFormFile ImageFile { get; set; }
 	}
 }

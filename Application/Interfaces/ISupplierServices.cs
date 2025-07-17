@@ -19,11 +19,10 @@ namespace Application.Interfaces
 		Task<ApiResponse<SupplierResponseDto>> GetSupplierByIdAsync(int id, ProductPaginationForSupplierQuery queryParamter);
 		Task<PagedResponse<List<SupplierListRespondDto>>> GetPaginatedSuppliersAsync(SupplierQueryParameters qP);
 		Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(string id, UpdateSupplierDto dto);
-		//Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteCategoryAsync(int id);
 
 		// verification 
 		Task<ApiResponse<ConfirmationResponseDto>> ChangeVerificationStatusAsync(ChangeSupplierVerificationStatusDto dto);
-		Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId, bool IsSupplier);
+		Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId);
 		Task<ApiResponse<List<SupplierVerificationStatusRespondDto>>> GetSuppliersByVerificationStatusAsync(bool? isVerified=null);
 
 		//TaxDocument
@@ -32,11 +31,9 @@ namespace Application.Interfaces
 		///Task<ApiResponse<supplier>> reated-this-mont(int id);
 		//Task<ApiResponse<int>> CountSuppliersAsync();
 		//Task<ApiResponse<int>> CountVerifiedSuppliersAsync();
-		//Task<ApiResponse<int>> CountSuppliersCreatedThisMonthAsync();
-
-		/// can change price 
+		//Task<ApiResponse<int>> CountSuppliersCreatedThisMonthAsync(); 
 
 		Task<ApiResponse<PurchaseOrderDetailsResponseDto>> SimulateSupplierReceivingAsync(int purchaseOrderId);
-
+		Task<ApiResponse<List<PendingPurchaseOrderResponseDto>>> GetPendingPurchaseOrdersForSupplierAsync();
 	}
 }

@@ -9,11 +9,11 @@ namespace Application.ResponseDTO_s
 {
 	public class ApiResponse<T>
 	{
-		public int StatusCode { get; set; }	
-		public T? Data { get; set; }	
-		public List<string> ErrorMessages { get; set; }	
+		public int StatusCode { get; set; }
+		public T? Data { get; set; }
+		public List<string> ErrorMessages { get; set; }
 		public bool IsSuccess { get; set; }
-		public string? Message { get; set; }	
+		public string? Message { get; set; }
 		public string ErrorCode { get; set; }
 		public Dictionary<string, string[]>? ValidationErrors { get; set; }
 
@@ -23,30 +23,30 @@ namespace Application.ResponseDTO_s
 			IsSuccess = true;
 			ErrorMessages = new List<string>();
 		}
-		public static ApiResponse<T> Success(T Data, int StatusCode, string message=null)
+		public static ApiResponse<T> Success(T Data, int StatusCode, string message = null)
 		{
 			return new ApiResponse<T>
 			{
 				StatusCode = StatusCode,
 				Data = Data,
-				Message = message	
+				Message = message
 			};
 		}
-		public static ApiResponse<T> SuccessWithWarnings(T Data, int StatusCode,List<string> Errors)
+		public static ApiResponse<T> SuccessWithWarnings(T Data, int StatusCode, List<string> Errors)
 		{
-			var obj= new ApiResponse<T>
+			var obj = new ApiResponse<T>
 			{
 				StatusCode = StatusCode,
 				Data = Data
 			};
 
-			if(Errors != null && Errors.Any())
+			if (Errors != null && Errors.Any())
 			{
-				obj.ErrorMessages = Errors;	
-			}	
-			return obj;	
+				obj.ErrorMessages = Errors;
+			}
+			return obj;
 		}
-		public static ApiResponse<T> Failuer(int StatusCode, string error,string errorCode= "NOTFOUND_ERROR")
+		public static ApiResponse<T> Failuer(int StatusCode, string error, string errorCode = "NOTFOUND_ERROR")
 		{
 			return new ApiResponse<T>
 			{
@@ -79,10 +79,16 @@ namespace Application.ResponseDTO_s
 		}
 		public static ApiResponse<T> Unauthorized(string message = "You are not authorized to access")
 		{
-			return ErrorResponse(message, "UNAUTHORIZED", 401);
+			return new ApiResponse<T>
+			{
+				StatusCode = 401,
+				IsSuccess = false,
+				ErrorCode = "UNAUTHORIZED",
+				Message = message,
+			};
 		}
 
-		public static ApiResponse<T> Forbidden(string message )
+		public static ApiResponse<T> Forbidden(string message)
 		{
 			return ErrorResponse(message, "FORBIDDEN", 403);
 		}
@@ -103,14 +109,25 @@ namespace Application.ResponseDTO_s
 		}
 		public static ApiResponse<T> ValidationError(List<string> errors)
 		{
-			var result= new ApiResponse<T>
+			var result = new ApiResponse<T>
 			{
 				StatusCode = 400,
 				IsSuccess = false,
 				ErrorCode = "VALIDATION_ERROR",
 			};
 			result.ErrorMessages.AddRange(errors);
-			return result;	
+			return result;
+		}
+
+		public static ApiResponse<T> BadReques(string error)
+		{
+			return new ApiResponse<T>
+			{
+				StatusCode = 400,
+				IsSuccess = false,
+				ErrorCode = " BadRequest_ERROR",
+				ErrorMessages = new List<string> { error }
+			};
 		}
 	}
 }

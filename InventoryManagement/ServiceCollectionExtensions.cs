@@ -1,4 +1,6 @@
 ﻿using Application.validations.Category;
+using InventoryManagement.Filters;
+using InventoryManagement.Settings;
 using System.Text.Json.Serialization;
 
 namespace InventoryManagement
@@ -12,6 +14,8 @@ namespace InventoryManagement
 				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 			});
 
+			service.Configure<ImageSettings>(configuration.GetSection("ImageSettings"));
+			service.AddScoped<ValidateImageAttribute>();
 			return service;
 		}
 	}

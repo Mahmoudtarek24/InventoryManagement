@@ -54,6 +54,7 @@ namespace Application.Mappings
 			responseDto.CreateOn = supplier.CreateOn;
 			responseDto.IsVerified = supplier.IsVerified;
 			responseDto.PhoneNumber = supplier.PhoneNumber;
+			responseDto.ProductCount = supplier.ProductCount;
 
 			if (userContextService.IsAdmin)
 			{

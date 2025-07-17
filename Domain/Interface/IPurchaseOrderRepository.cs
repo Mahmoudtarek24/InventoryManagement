@@ -15,5 +15,6 @@ namespace Domain.Interface
 		Task<PurchaseOrder?> GetPurchaseOrderWithItemsAndSupplierAsync(int purchaseOrderId);
 		Task<(int, List<PurchaseOrder>)> GetPurchaseOrdersWithFiltersAsync(PurchaseOrderFilter query);
 		Task<List<PurchaseOrder>> GetPurchaseOrdersBySupplierAsync(int supplierId);
+		Task<List<PurchaseOrder>> GetPurchaseOrdersBySupplierAndStatusAsync(int supplierId);
 	}
 }

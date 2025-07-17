@@ -15,7 +15,7 @@ namespace Application.Interfaces
 	{
 		Task<ApiResponse<ConfirmationResponseDto>> CreateWarehouseAsync(CreateWarehouseDto dto);
 		Task<ApiResponse<WarehouseResponseDto>> GetWarehouseByIdAsync(int id);
-		Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query);
+		Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(PaginationQueryParameters query);
 		Task SendProductsToWarehouse(PurchaseOrder purchaseOrder);
 	}
 }

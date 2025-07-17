@@ -1,4 +1,5 @@
 ﻿using Application.DTO_s;
+using Application.DTO_s.InventoryDto_s;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.ResponseDTO_s;
@@ -21,24 +22,27 @@ namespace Application.Services
 		{
 			this.unitOfWork = unitOfWork;
 		}
+		//		return ApiResponse<CategoryResponseDto>.ValidationError($"Category with name '{dto.Name}' already exists.");
+		//return ApiResponse<WarehouseResponseDto>.Failuer(404, $"Category with Id '{warehouseId}' Not Found ");
+
 		public async Task<ApiResponse<InventoryResponseDto>> GetInventoryByProductAndWarehouseAsync(int productId, int warehouseId)
 		{
 			var inventory = await unitOfWork.InventoryRepository
 								.GetInventoryByProductAndWarehouseAsync(productId, warehouseId);
 
 			if (inventory is null)
-				return ApiResponse<InventoryResponseDto>.Success(null
+				return ApiResponse<InventoryResponseDto>.Success(null                           
 						 , 200, "Inventory not found for the specified product and warehouse");
 
 			var inventoryDto = inventory.ToResponseDto();
 			return ApiResponse<InventoryResponseDto>.Success(inventoryDto, 200);
 		}
 
-		public async Task<PagedResponse<List<InventoryResponseDto>>> GetInventoryByWarehouseAsync(BaseQueryParameters query, int warehouseId)
+		public async Task<PagedResponse<List<InventoryResponseDto>>> GetInventoryByWarehouseAsync(InventorQueryParameter query, int warehouseId)
 		{
 			var warehouseExists = await unitOfWork.WarehouseRepository.ExistsAsync(warehouseId);
 			if (!warehouseExists)
-				throw new Exception(); //"Warehouse not found"
+				throw new Exception(); //"Warehouse not found"////////////////////////////
 
 			var parameter = new BaseFilter()
 			{   
@@ -47,31 +51,36 @@ namespace Application.Services
 				searchTearm = query.searchTearm,
 			};
 
-			var (inventoryList, totalCount) = await unitOfWork.InventoryRepository.GetInventoryByWarehouseWithFiltersAsync(warehouseId, parameter);
+			var (inventoryList, totalCount) = await unitOfWork.InventoryRepository
+				                            .GetInventoryByWarehouseWithFiltersAsync(warehouseId, parameter);
 
-			if (inventoryList == null || !inventoryList.Any())
+			if (inventoryList is null )
 				return PagedResponse<List<InventoryResponseDto>>
 					 .SimpleResponse(new List<InventoryResponseDto>(),0,0,0);
 
-		//	query.TotalCount = totalCount;	
 			var inventoryDto = inventoryList.Select(e=>e.ToResponseDto()).ToList();
 
 			return PagedResponse<List<InventoryResponseDto>>
 				      .SimpleResponse(inventoryDto, parameter.PageNumber, parameter.PageSize, totalCount);
 		}
 
-		public async Task<ApiResponse<List<InventoryResponseDto>>> GetInventoryByProductAsync(int productId)
+		public async Task<ApiResponse<ProductInventoryResponseDto>> GetInventoryByProductAsync(int productId)
 		{
 			var inventoryList = await unitOfWork.InventoryRepository.GetInventoryByProductAsync(productId);
 
 			if (!inventoryList.Any())
-				return ApiResponse<List<InventoryResponseDto>>.Success(null
+				return ApiResponse<ProductInventoryResponseDto>.Success(null
 						 , 200, "Inventory not found for the specified product ");
 
 
-			var inventoryDto = inventoryList.Select(e => e.ToResponseDto()).ToList();
+			var inventoryDto = inventoryList.Select(e => e.ToProductInventoryResponseDto()).ToList();
+			var result = new ProductInventoryResponseDto()
+			{
+				Items = inventoryDto,
+				TotalQuantity = inventoryDto.Sum(e => e.QuantityInStock)
+			};
 
-			return ApiResponse<List<InventoryResponseDto>>.Success(inventoryDto, 200);	
+			return ApiResponse<ProductInventoryResponseDto>.Success(result, 200);	
 		}
 
 		public async Task<ApiResponse<List<LowStockAlertDto>>> GetLowStockAlertsAsync(int threshold)

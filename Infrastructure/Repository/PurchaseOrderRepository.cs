@@ -2,6 +2,7 @@
 using Application.DTO_s.PurchaseOrder;
 using Application.ResponseDTO_s.PurchaseOrder;
 using Domain.Entity;
+using Domain.Enum;
 using Domain.Interface;
 using Domain.Parameters;
 using Domain.QueryParameters;
@@ -75,5 +76,12 @@ namespace Infrastructure.Repository
 							   .Where(po => po.SupplierId == supplierId && !po.IsDeleted)
 							   .OrderByDescending(po => po.CreateOn).ToListAsync();
 
+
+
+		public async Task<List<PurchaseOrder>> GetPurchaseOrdersBySupplierAndStatusAsync(int supplierId) =>
+			await context.PurchaseOrders.Include(po => po.OrderItems)
+				.Where(po => po.SupplierId == supplierId && po.PurchaseOrderStatus== PurchaseOrderStatus.Sent||
+			    	po.PurchaseOrderStatus == PurchaseOrderStatus.PartiallyReceived)
+				.OrderByDescending(po => po.CreateOn).ToListAsync();
 	}
 }

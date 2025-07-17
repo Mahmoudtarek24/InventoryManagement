@@ -22,5 +22,6 @@ namespace Domain.Interface
 		Task<Dictionary<int, List<string>>> GetExistingProductNamesInCategoriesAsync(
 			Dictionary<int, List<string>> productNamesByCategory);
 		Task<List<Product>> GetProductsByIdsAndSupplierAsync(List<int> productIds, int supplierId);
+
 	}
 }

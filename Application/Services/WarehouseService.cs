@@ -5,6 +5,7 @@ using Application.DTO_s.WarehouseDto_s;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.ResponseDTO_s;
+using Application.ResponseDTO_s.CategoryResponse;
 using Application.ResponseDTO_s.WarehouseResponse;
 using Domain.Entity;
 using Domain.Interface;
@@ -27,6 +28,7 @@ namespace Application.Services
 			this.unitOfWork = unitOfWork;
 			this.stockMovementServices = stockMovementServices;
 		}
+		
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreateWarehouseAsync(CreateWarehouseDto dto)
 		{
 			var serialNumber = await GenerateSerialNumberAsync(dto);
@@ -68,7 +70,7 @@ namespace Application.Services
 		{
 			var warehouse=await unitOfWork.WarehouseRepository.GetByIdAsync(id);
 			if (warehouse is null)
-				throw new Exception();
+				return ApiResponse<WarehouseResponseDto>.Failuer(404, $"Category with Id '{id}' Not Found ");
 
 			var response = new WarehouseResponseDto()
 			{
@@ -78,19 +80,18 @@ namespace Application.Services
 			return ApiResponse<WarehouseResponseDto>.Success(response, 200);
 		}
 
-		public async Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(BaseQueryParameters query)
+		public async Task<PagedResponse<List<WarehouseResponseDto>>> GetWarehousesAsync(PaginationQueryParameters query)
 		{
 			var parameter = new BaseFilter()
 			{
 				PageNumber = query.PageNumber,
 				PageSize = query.PageSize,
-				searchTearm = query.searchTearm,
 			};
 
 			var (warehouses, totalCount) = await unitOfWork.WarehouseRepository.GetWarehousesWithFiltersAsync(parameter);
 
-			if (warehouses == null || !warehouses.Any())
-				return PagedResponse<List<WarehouseResponseDto>>.SimpleResponse(new List<WarehouseResponseDto>(), 0, 0, 0);
+			if (warehouses is null )
+				return PagedResponse<List<WarehouseResponseDto>>.SimpleResponse(null, 0, 0, 0,"Still No Data");
 
 			var warehouseDtos = warehouses.Select(e => new WarehouseResponseDto()
 			{

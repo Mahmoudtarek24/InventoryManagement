@@ -23,7 +23,6 @@ namespace Infrastructure.Repository
 		{
 			var query = context.SupplierProfileView.AsQueryable();
 
-			// Search functionality
 			if (!string.IsNullOrEmpty(filter.searchTearm))
 				query = query.Where(e =>
 					e.CompanyName.ToLower().Contains(filter.searchTearm) ||
@@ -33,7 +32,6 @@ namespace Infrastructure.Repository
 
 			int totalCount = await query.CountAsync();
 
-			// Sorting functionality
 			if (!string.IsNullOrEmpty(filter.SortBy))
 			{
 				switch (filter.SortBy.ToLower())
@@ -43,12 +41,6 @@ namespace Infrastructure.Repository
 						break;
 					case "isverified":
 						query = filter.SortAscending ? query.OrderBy(e => e.IsVerified) : query.OrderByDescending(e => e.IsVerified);
-						break;
-					case "email":
-						query = filter.SortAscending ? query.OrderBy(e => e.Email) : query.OrderByDescending(e => e.Email);
-						break;
-					case "phonenumber":
-						query = filter.SortAscending ? query.OrderBy(e => e.PhoneNumber) : query.OrderByDescending(e => e.PhoneNumber);
 						break;
 					case "productcount":
 						query = filter.SortAscending ? query.OrderBy(e => e.ProductCount) : query.OrderByDescending(e => e.ProductCount);

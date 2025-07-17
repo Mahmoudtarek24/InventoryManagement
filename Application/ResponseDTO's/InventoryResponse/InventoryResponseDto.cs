@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Application.ResponseDTO_s.InventoryResponse
 {
 	public class InventoryResponseDto
-	{
+	{ 
 		public int ProductId { get; set; }	
 		public string ProductName { get; set; }
 		public int QuantityInStock { get; set; }

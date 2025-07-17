@@ -25,13 +25,7 @@ namespace Infrastructure.Repository
 		{
 			var query = context.Warehouses.AsQueryable();
 
-			if (!string.IsNullOrEmpty(filter.searchTearm))
-				query = query.Where(w => w.SerialNumber.Contains(filter.searchTearm, StringComparison.OrdinalIgnoreCase));
-
 			int totalCount = await query.CountAsync();
-
-			query = query.OrderByDescending(w => w.WarehouseId);
-
 			query = query.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize);
 
 			var result = await query.ToListAsync();

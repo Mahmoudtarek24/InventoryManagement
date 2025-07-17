@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using Application.Constants.Enum;
+using Application.Interfaces;
 using Application.ResponseDTO_s.PurchaseOrder;
 using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Entity;
@@ -25,7 +26,7 @@ namespace Application.Mappings
 				PurchaseOrderId = purchaseOrder.PurchaseOrderId,
 				ExpectedDeliveryDate = purchaseOrder.ExpectedDeliveryDate,
 				TotalCost = purchaseOrder.TotalCost,
-				PurchaseOrderStatus = purchaseOrder.PurchaseOrderStatus,
+				PurchaseOrderStatus =(PurchaseStatus)purchaseOrder.PurchaseOrderStatus,
 				CreatedOn = purchaseOrder.CreateOn,
 
 				Supplier = new SupplierBaseResponsDto

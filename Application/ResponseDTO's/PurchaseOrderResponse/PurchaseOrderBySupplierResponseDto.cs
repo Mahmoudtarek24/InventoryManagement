@@ -1,4 +1,5 @@
-﻿using Domain.Enum;
+﻿using Application.Constants.Enum;
+using Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Application.ResponseDTO_s.PurchaseOrder
 		public int PurchaseOrderId { get; set; }
 		public DateTime ExpectedDeliveryDate { get; set; }
 		public decimal TotalCost { get; set; }
-		public PurchaseOrderStatus PurchaseOrderStatus { get; set; }
+		public PurchaseStatus PurchaseOrderStatus { get; set; }
 		public int NumberOfItems { get; set; }
 	}
 }

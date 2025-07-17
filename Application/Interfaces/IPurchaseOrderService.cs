@@ -18,9 +18,9 @@ namespace Application.Interfaces
 	{
 		Task<ApiResponse<ConfirmationResponseDto>> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto);
 		Task<ApiResponse<ConfirmationResponseDto>> UpdatePurchaseOrderAsync(int id, [FromBody] UpdatePurchaseOrderDto dto);
-		Task<ApiResponse<PurchaseOrderDetailsResponseDto>> GetPurchaseorderByIdAsync(int purchaseId);
+		Task<ApiResponse<PurchaseOrderDetailsResponseDto>> GetPurchaseOrderByIdAsync(int purchaseId);
 		Task<PagedResponse<List<PurchaseOrderListItemResponseDto>>> GetPurchaseOrdersWithPaginationAsync(PurchaseOrderQueryParameter orderQP);
-		Task<List<PurchaseOrderBySupplierResponseDto>> GetOrdersBySupplierAsync(int supplierId);
+		Task<ApiResponse<List<PurchaseOrderBySupplierResponseDto>>> GetOrdersBySupplierAsync(int supplierId);
 		///will put it on supplier controller amd will get supplierId from token will not ask for it 
 		/// also but on Purchase Order controller and will ask for supplier id
 		Task<ApiResponse<ConfirmationResponseDto>> AddOrderItemAsync(int purchaseOrderId, AddOrderItemDto dto);

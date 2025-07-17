@@ -32,16 +32,18 @@ namespace Application.Services
 		private readonly RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper;
 		private readonly IImageStorageService imageStorageService;
 		private readonly IWarehouseService warehouseService;
+		private readonly IUserContextService userContextService;
 		public SupplierServices(IUnitOfWork unitOfWork, IAuthService authService, RoleBasedSupplierMapper mapper
-							    , IWarehouseService warehouseService , IImageStorageService imageStorageService
-				                , RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper)
+								, IWarehouseService warehouseService, IImageStorageService imageStorageService
+								, RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper, IUserContextService userContextService)
 		{
 			this.unitOfWork = unitOfWork;
 			this.authService = authService;
 			this.mapper = mapper;
 			this.imageStorageService = imageStorageService;
 			this.roleBasedPurchaseOrderMapper = roleBasedPurchaseOrderMapper;
-			this.warehouseService = warehouseService;	
+			this.warehouseService = warehouseService;
+			this.userContextService = userContextService;
 		}
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreateSupplierAsync(CreateSupplierDto dto)
 		{
@@ -113,9 +115,9 @@ namespace Application.Services
 			var (totalCount, suppliers) = await unitOfWork.SupplierRepository.SupplierWithProductCountAsync(Filter);
 
 			if (totalCount == 0)
-				return PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(new List<SupplierListRespondDto>(),
+				return PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(null,
 					qP.PageNumber
-					,qP.PageSize,
+					, qP.PageSize,
 					totalCount,
 					"No suppliers found matching the search criteria.");
 
@@ -124,42 +126,16 @@ namespace Application.Services
 			var pagedResponse = PagedResponse<List<SupplierListRespondDto>>.SimpleResponse(supplierDtos, qP.PageSize, qP.PageSize, totalCount);
 			return pagedResponse;
 		}
-
-		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(string id, UpdateSupplierDto dto)
-		{
-			var existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(id);
-			if (existingSupplier == null || existingSupplier.IsDeleted)
-				throw new Exception();
-			// throw new NotFoundException($"Supplier with ID '{id}' not found.");
-
-			bool companyNameExists = await unitOfWork.SupplierRepository.IsCompanyNameExistsAsync(dto.CompanyName, existingSupplier.SupplierId);
-			if (companyNameExists)
-				throw new Exception();
-			// throw new ConflictException($"Supplier with company name '{dto.CompanyName}' already exists.");
-
-			mapper.MapUpdateDtoToSupplier(dto, existingSupplier);
-			await unitOfWork.BeginTransactionAsync();
-			await unitOfWork.CommitTransaction();
-
-			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
-			{
-				Message = $"Supplier '{existingSupplier.CompanyName}' with ID {existingSupplier.SupplierId} Updated Successfully",
-				status = ConfirmationStatus.Updated
-			};
-			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
-		}
-
 		public async Task<ApiResponse<ConfirmationResponseDto>> ChangeVerificationStatusAsync(ChangeSupplierVerificationStatusDto dto)
 		{
 			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(dto.SupplierId);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
-				throw new Exception();
-			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Supplier with Id '{existingSupplier.SupplierId}' Not Found ");
 
 			var newStatus = (Domain.Enum.VerificationStatus)dto.newStatus;
 
 			if (existingSupplier.VerificationStatus == newStatus)
-				return ApiResponse<ConfirmationResponseDto>.Failuer(400, "Supplier already has this verification status.");
+				return ApiResponse<ConfirmationResponseDto>.Success(null, 200, "Supplier already has this verification status.");
 
 			existingSupplier.VerificationStatus = newStatus;
 			existingSupplier.LastUpdateOn = DateTime.Now;
@@ -183,28 +159,27 @@ namespace Application.Services
 			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
 		}
 
-		public async Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId,bool IsSupplier)
+		public async Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId)
 		{
 			string actualSupplierId = supplierId;
-			if (IsSupplier)
+			if (userContextService.IsSupplier)
 			{
 				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
-				if (supplier == null)
-				{
-					throw new UnauthorizedAccessException("Supplier not found");
-				}
+				if (supplier is null)
+					return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Failuer(404, $"Supplier with Id '{supplier?.SupplierId}' Not Found ");
+
 				actualSupplierId = supplier.SupplierId.ToString();
 			}
 
 			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(int.Parse(actualSupplierId));
-			if (existingSupplier == null || existingSupplier.IsDeleted)
-				throw new Exception();
-			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
+			if (existingSupplier is null)
+				return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Failuer(404, $"Supplier with Id '{existingSupplier?.SupplierId}' Not Found ");
+
 
 			var responseDto = new SupplierVerificationStatusBaseRespondDto
 			{
 				Status = existingSupplier.VerificationStatus.ToString(),
-				Reason = existingSupplier.RejectionReason?? "No enter reson"
+				Reason = existingSupplier.RejectionReason ?? "No enter reson"
 			};
 			return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Success(responseDto, 200, "Verification status retrieved successfully");
 		}
@@ -225,22 +200,18 @@ namespace Application.Services
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> UploadSupplierTaxDocumentAsync(string supplierId, FileUploadDto file)
 		{
-			////on controller i will check from userId is supplier
 			var existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
 			if (existingSupplier == null || existingSupplier.IsDeleted)
-				throw new Exception();
-			// throw new NotFoundException($"Supplier with ID '{supplierId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Supplier with Id '{supplierId}' Not Found ");
 
 			if (!string.IsNullOrEmpty(existingSupplier.TaxDocumentPath))
-			{
 				imageStorageService.DeleteImage(existingSupplier.TaxDocumentPath);
-			}
 
-			var (uploadSuccess, fileName) = await imageStorageService.UploadImage(file.File, "supplier-documents");
+			var (uploadSuccess, fileName) = await imageStorageService.UploadImage(file.ImageFile, "supplier-documents");
 
 			if (!uploadSuccess)
 				throw new Exception();
-			// throw new InternalServerException("Failed to upload document.");
+			// throw new InternalServerException("Failed to upload document."); //////////////////////////////////
 
 			existingSupplier.TaxDocumentPath = $"supplier-documents/{fileName}";
 			existingSupplier.LastUpdateOn = DateTime.Now;
@@ -260,14 +231,14 @@ namespace Application.Services
 		{
 			var purchaseOrder = await unitOfWork.PurchaseOrderRepository
 												.GetPurchaseOrderWithItemsAndSupplierAsync(purchaseOrderId);
-			if (purchaseOrder == null || purchaseOrder.IsDeleted)
-				throw new Exception("Purchase order not found.");
+			if (purchaseOrder is null)
+				return ApiResponse<PurchaseOrderDetailsResponseDto>.Failuer(404, $"Supplier with Id '{purchaseOrderId}' Not Found ");
 
-			var allowedStatuses = new[] {PurchaseOrderStatus.Sent, PurchaseOrderStatus.PartiallyReceived };
+			var allowedStatuses = new[] { PurchaseOrderStatus.Sent, PurchaseOrderStatus.PartiallyReceived };
 
 			if (!allowedStatuses.Contains(purchaseOrder.PurchaseOrderStatus))
 				return ApiResponse<PurchaseOrderDetailsResponseDto>.Success(null, 200
-					, "Purchase order status doesn't allow receiving simulation.");
+										  , "Purchase order status doesn't allow receiving simulation.");
 
 			Random rnd = new Random();
 			foreach (var item in purchaseOrder.OrderItems.Where(e => e.ReceivedQuantity < e.OrderQuantity))
@@ -306,5 +277,56 @@ namespace Application.Services
 			};
 			purchaseOrder.LastUpdateOn = DateTime.Now;
 		}
+		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateSupplierAsync(string id, UpdateSupplierDto dto)
+		{
+			Supplier existingSupplier;
+
+			if (userContextService.IsSupplier)
+				existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(id);
+			else
+				existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(int.Parse(id));
+
+			if (existingSupplier is null)
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Supplier with Id '{existingSupplier.SupplierId}' Not Found ");
+
+			bool companyNameExists = await unitOfWork.SupplierRepository
+				  .IsCompanyNameExistsAsync(dto.CompanyName, existingSupplier.SupplierId);
+
+			if (companyNameExists)
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Supplier with company name '{dto.CompanyName}' already exists.");
+
+			mapper.MapUpdateDtoToSupplier(dto, existingSupplier);
+			await unitOfWork.BeginTransactionAsync();
+			await unitOfWork.CommitTransaction();
+
+			ConfirmationResponseDto responseDto = new ConfirmationResponseDto()
+			{
+				Message = $"Supplier '{existingSupplier.CompanyName}' with ID {existingSupplier.SupplierId} Updated Successfully",
+				status = ConfirmationStatus.Updated
+			};
+			return ApiResponse<ConfirmationResponseDto>.Success(responseDto, 200);
+		}
+
+		public async Task<ApiResponse<List<PendingPurchaseOrderResponseDto>>> GetPendingPurchaseOrdersForSupplierAsync()
+		{
+			var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
+			if (supplier is null)
+				return ApiResponse<List<PendingPurchaseOrderResponseDto>>.Failuer(404, $"Supplier with  Not Found");
+
+			var purchaseOrders = await unitOfWork.PurchaseOrderRepository
+				.GetPurchaseOrdersBySupplierAndStatusAsync(supplier.SupplierId);
+
+			if (!purchaseOrders.Any())
+				return ApiResponse<List<PendingPurchaseOrderResponseDto>>.Success(null,200,"No pending purchase orders found for processing.");
+
+			var pendingOrders = purchaseOrders.Select(po => new PendingPurchaseOrderResponseDto
+			{
+				PurchaseOrderId = po.PurchaseOrderId,
+				Status = po.PurchaseOrderStatus.ToString()=="Sent"? "Pending (Not processed)": "partially received to Inventory"
+			}).ToList();
+
+			return ApiResponse<List<PendingPurchaseOrderResponseDto>>.Success(pendingOrders, 200 );
+		}
+
 	}
 }

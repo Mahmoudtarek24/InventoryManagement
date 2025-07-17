@@ -10,6 +10,6 @@ namespace Application.DTO_s.PurchaseOrder
 	public class PurchaseOrderQueryParameter : BaseQueryParameters 
 	{ 
 		public PurchaseOrderSortBy SortOptions { get; set; }
-		//public PurchaseOrderStatus? Status { get; set; }
+		public PurchaseStatus PurchaseOrderStatus { get; set; }
 	}
 }

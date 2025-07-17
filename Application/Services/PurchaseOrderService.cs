@@ -12,6 +12,7 @@ using Domain.Entity;
 using Domain.Enum;
 using Domain.Interface;
 using Domain.QueryParameters;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using PurchaseOrderStatus = Domain.Enum.PurchaseOrderStatus;
 
 namespace Application.Services
@@ -37,42 +39,51 @@ namespace Application.Services
 					  };
 
 		private readonly IUnitOfWork unitOfWork;
-		private readonly IUserContextService userContextService;
+		private readonly IUserContextService userContext;
 		private readonly IUriService uriService;
 		private readonly RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper;
 		public PurchaseOrderService(IUnitOfWork unitOfWork, IUserContextService userContextService
 									, RoleBasedPurchaseOrderMapper roleBasedPurchaseOrderMapper, IUriService uriService)
 		{
 			this.unitOfWork = unitOfWork;
-			this.userContextService = userContextService;
+			this.userContext = userContextService;
 			this.roleBasedPurchaseOrderMapper = roleBasedPurchaseOrderMapper;
 			this.uriService = uriService;
 		}
+		
 		public async Task<ApiResponse<ConfirmationResponseDto>> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto)
 		{
-			List<string> warnings = new List<string>();
+			var warnings = new List<string>();
 
-			var key = "Create";
-			if (ValidOrderStatus[key].Contains((PurchaseStatus)dto.purchaseOrderStatus))
-				throw new Exception();
-			//throw new BadRequestException($"Invalid purchase order status '{dto.purchaseOrderStatus}' for operation '{context}'.");
+			if (!ValidOrderStatus["Create"].Contains((PurchaseStatus)dto.purchaseOrderStatus))
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Invalid purchase order status '{dto.purchaseOrderStatus}' ");
 
 			bool supplierExists = await unitOfWork.SupplierRepository.IsVerifiedAndActiveSupplierAsync(dto.SupplierId);
 			if (!supplierExists)
-				throw new Exception();
-			//  throw new NotFoundException($"Category with ID '{dto.CategoryId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Supplier with ID '{dto.SupplierId}' was not found.");
+
 
 			var supplierProductIds = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(dto.SupplierId);
 			var supplierProductSet = new HashSet<int>(supplierProductIds);
 
-			var validOrderItems = dto.purchaseOrderItemDtos
-						.Where(item => supplierProductSet.Contains(item.ProductId) && item.OrderQuantity > 0).ToList();
+
+			var groupedOrderItems = dto.purchaseOrderItemDtos
+		        .Where(item => supplierProductSet.Contains(item.ProductId) && item.OrderQuantity > 0)
+				 .GroupBy(item => item.ProductId).Select(group => new
+				 {
+					 ProductId = group.Key,
+					 OrderQuantity = group.Sum(item => item.OrderQuantity)
+				 }).ToList();
 
 			var invalidProductIds = dto.purchaseOrderItemDtos.Select(p => p.ProductId)
 							   .Where(id => !supplierProductSet.Contains(id)).ToList();
 
 			if (invalidProductIds.Any())
 				warnings.Add($"Products with IDs [{string.Join(", ", invalidProductIds)}] are not valid for the selected supplier.");
+
+			if (!groupedOrderItems.Any())
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("No valid products found for this supplier or all quantities are zero.");
+
 
 			var purchaseOrder = new PurchaseOrder
 			{
@@ -86,12 +97,12 @@ namespace Application.Services
 			};
 
 			var productPrices = await unitOfWork.ProductRepository
-								 .GetProductPricesAsync(validOrderItems.Select(e => e.ProductId).Distinct().ToList());
-			foreach (var item in validOrderItems)
+								.GetProductPricesAsync(groupedOrderItems.Select(e => e.ProductId).Distinct().ToList());
+			foreach (var item in groupedOrderItems)
 			{
 				purchaseOrder.OrderItems.Add(new PurchaseOrderItem
 				{
-					OrderQuantity = item.OrderQuantity,
+					OrderQuantity = item.OrderQuantity ,
 					ProductId = item.ProductId,
 					UnitPrice = productPrices[item.ProductId]
 				});
@@ -113,16 +124,14 @@ namespace Application.Services
 		public async Task<ApiResponse<ConfirmationResponseDto>> UpdatePurchaseOrderAsync(int id, [FromBody] UpdatePurchaseOrderDto dto)
 		{
 			List<string> warnings = new List<string>();
-			var key = "Update";
 
 			var purchaseOrder = await unitOfWork.PurchaseOrderRepository.GetByIdAsync(id);
-			if (purchaseOrder == null || purchaseOrder.IsDeleted)
-				throw new Exception();
-			//throw new NotFoundException($"Purchase order with ID '{id}' not found.");
+			if (purchaseOrder is null)
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Purchase Order with ID '{id}' was not found.");
 
-			if (dto.PurchaseOrderStatus.HasValue && !ValidOrderStatus[key].Contains(dto.PurchaseOrderStatus.Value))
-				throw new Exception();
-			//throw new BadRequestException($"Invalid purchase order status '{dto.PurchaseOrderStatus}' for operation '{key}'.");
+			if (dto.PurchaseOrderStatus.HasValue && !ValidOrderStatus["Update"].Contains(dto.PurchaseOrderStatus.Value))
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Invalid purchase order status " +
+				                       	$"'{dto.PurchaseOrderStatus}' for operation Upate");
 
 			await unitOfWork.BeginTransactionAsync();
 			if (dto.ExpectedDeliveryDate.HasValue)
@@ -146,29 +155,26 @@ namespace Application.Services
 		}
 
 
-		public async Task<ApiResponse<PurchaseOrderDetailsResponseDto>> GetPurchaseorderByIdAsync(int purchaseId)
+		public async Task<ApiResponse<PurchaseOrderDetailsResponseDto>> GetPurchaseOrderByIdAsync(int purchaseId)
 		{
 			var purchaseOrder = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrderWithItemsAndSupplierAsync(purchaseId);
-			if (purchaseOrder == null || purchaseOrder.IsDeleted)
-				throw new Exception("Purchase order not found.");
+			if (purchaseOrder is null || purchaseOrder.IsDeleted)
+				return ApiResponse<PurchaseOrderDetailsResponseDto>.Failuer(404, $"Purchase Order with ID '{purchaseId}' was not found.");
 
-			if (userContextService.IsSupplier)
+			if (userContext.IsSupplier)
 			{
-				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContextService.userId);
-				if (supplier == null)
-					throw new Exception("Supplier not found for current user.");
+				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(userContext.userId);
+				if (supplier is null)
+					return ApiResponse<PurchaseOrderDetailsResponseDto>.Failuer(404, $"Supplier with was not found.");
 
-				// Check if the purchase order belongs to this supplier
 				if (purchaseOrder.SupplierId != supplier.SupplierId)
-					throw new Exception("Access denied. You can only view your own purchase orders.");
+					return ApiResponse<PurchaseOrderDetailsResponseDto>.Unauthorized("Access denied. You can only view your own purchase orders.");
+
 
 				var status = purchaseOrder.PurchaseOrderStatus;
-				if (status != PurchaseOrderStatus.Sent &&
-					status != PurchaseOrderStatus.PartiallyReceived &&
-					status != PurchaseOrderStatus.Received)
-				{
-					throw new Exception("Access denied. You can only view purchase orders that have been sent to you.");
-				}
+				if (status != PurchaseOrderStatus.Sent &&  status != PurchaseOrderStatus.PartiallyReceived &&
+					                 status != PurchaseOrderStatus.Received)
+					return ApiResponse<PurchaseOrderDetailsResponseDto>.Unauthorized("Access denied. You can only view purchase orders that have been sent to you.");
 			}
 
 			var response = roleBasedPurchaseOrderMapper.MapToPurchaseOrderDetailsDtoAsync(purchaseOrder);
@@ -176,7 +182,7 @@ namespace Application.Services
 		}
 
 		public async Task<PagedResponse<List<PurchaseOrderListItemResponseDto>>> GetPurchaseOrdersWithPaginationAsync
-												   (PurchaseOrderQueryParameter queryParam)
+											       	   (PurchaseOrderQueryParameter queryParam)
 		{
 			var filter = new PurchaseOrderFilter
 			{
@@ -185,36 +191,33 @@ namespace Application.Services
 				searchTearm = queryParam.searchTearm,
 				SortAscending = queryParam.SortAscending,
 				SortBy = queryParam.SortOptions.ToString(),
-				//	Status = queryParam.Status 
+				Status =(PurchaseOrderStatus)queryParam.PurchaseOrderStatus,
 			};
 			var (totalCount, purchaseOrders) = await unitOfWork.PurchaseOrderRepository
 													   .GetPurchaseOrdersWithFiltersAsync(filter);
 			if (totalCount == 0)
-			{
-				return PagedResponse<List<PurchaseOrderListItemResponseDto>>.SimpleResponse(
-					new List<PurchaseOrderListItemResponseDto>(),
-					queryParam.PageNumber,
-					queryParam.PageSize,
-					0,
-					"No purchase orders found matching the specified criteria.");
-			}
+				return PagedResponse<List<PurchaseOrderListItemResponseDto>>.SimpleResponse(null,
+								queryParam.PageNumber, queryParam.PageSize, 0
+								,"No purchase orders found matching the specified criteria.");
 
 			var purchaseOrderDtos = purchaseOrders.Select(e => e.ToResponseDto()).ToList();
 
 			var pagedResponse = PagedResponse<List<PurchaseOrderListItemResponseDto>>.SimpleResponse(purchaseOrderDtos,
-				queryParam.PageNumber,
-				queryParam.PageSize,
-				totalCount);
+				                   queryParam.PageNumber, queryParam.PageSize, 	totalCount);
 
-			return pagedResponse.AddPagingInfo(totalCount, uriService, userContextService.Route);
+			return pagedResponse.AddPagingInfo(totalCount, uriService, userContext.Route);
 		}
-		public async Task<List<PurchaseOrderBySupplierResponseDto>> GetOrdersBySupplierAsync(int supplierId)
+		public async Task<ApiResponse<List<PurchaseOrderBySupplierResponseDto>>> GetOrdersBySupplierAsync(int supplierId)
 		{
 			var purchaseOrders = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrdersBySupplierAsync(supplierId);
+			if (purchaseOrders is null )
+				return ApiResponse<List<PurchaseOrderBySupplierResponseDto>>
+					    .Failuer(404, $"Purchase Order for Supplier with ID '{supplierId}' was not found.");
 
 			var purchaseOrderDtos = purchaseOrders.Select(po => po.ToResponseSupplierDto()).ToList();
-			return purchaseOrderDtos;
+			return ApiResponse<List<PurchaseOrderBySupplierResponseDto>>.Success(purchaseOrderDtos, 200);
 		}
+
 		public async Task<ApiResponse<ConfirmationResponseDto>> AddOrderItemAsync(int purchaseOrderId, AddOrderItemDto dto)
 		{
 			List<string> warnings = new List<string>();
@@ -222,17 +225,15 @@ namespace Application.Services
 
 			var itemsToAdd = ValidateAndExtractItems(dto);
 			if (!itemsToAdd.Any())
-				throw new Exception();
-			//	throw new BadRequestException("No valid items provided. Please provide either single item data or items list.");
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("No valid items provided. Please provide either single item data or items list.");
 
 			var purchaseOrder = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrderWithItemsAsync(purchaseOrderId);
-			if (purchaseOrder == null || purchaseOrder.IsDeleted)
-				throw new Exception("Purchase order not found.");
+			if (purchaseOrder is null)
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Purchase Order with was not found.");
 
-			if (!IsValidStatusForOperation(key, (Application.Constants.Enum.PurchaseStatus)purchaseOrder.PurchaseOrderStatus))
-				throw new Exception();
-			//	throw new BadRequestException($"Cannot add items to purchase order with status '{purchaseOrder.PurchaseOrderStatus}'.");
-
+			if (!IsValidStatusForOperation(key,(PurchaseStatus)purchaseOrder.PurchaseOrderStatus))
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Cannot add items to purchase order with status '{purchaseOrder.PurchaseOrderStatus}'.");
+			
 			var supplierProductIds = await unitOfWork.ProductRepository.GetProductsBySupplierAsync(purchaseOrder.SupplierId);
 
 			var existingProductIds = purchaseOrder.OrderItems.Select(item => item.ProductId).ToList();
@@ -242,24 +243,20 @@ namespace Application.Services
 			warnings.AddRange(validationResult.Warnings);
 
 			if (!validItems.Any() && !validationResult.ItemsToUpdateQuantity.Any())
-				throw new Exception();
-			//throw new BadRequestException("No valid items to add after validation.");
+				return ApiResponse<ConfirmationResponseDto>.BadReques("No valid items to add after validation.");
 
 			var productIds = validItems.Select(item => item.ProductId).Distinct().ToList();
 			var productPrices = await unitOfWork.ProductRepository.GetProductPricesAsync(productIds);
 
 			var newOrderItems = CreateOrderItems(validItems, productPrices, purchaseOrderId, warnings);
 
-			//if (!newOrderItems.Any())
-			//throw new Exception();
-			//	throw new BadRequestException("No items could be added after price validation.");
-
 			await SaveOrderItems(newOrderItems, purchaseOrder, validationResult.ItemsToUpdateQuantity);
-
+			
+			//if (!newOrderItems.Any())
+			//	return ApiResponse<ConfirmationResponseDto>.BadReques("No valid items to add after validation.");
 			var responseDto = CreateResponse(newOrderItems, validationResult.ItemsToUpdateQuantity, purchaseOrderId);
 
 			return ApiResponse<ConfirmationResponseDto>.SuccessWithWarnings(responseDto, 201, warnings);
-
 		}
 
 		private List<OrderItemDto> ValidateAndExtractItems(AddOrderItemDto dto)
@@ -338,7 +335,6 @@ namespace Application.Services
 					warnings.Add($"Product #{item.ProductId}: Price not found, skipping");
 					continue;
 				}
-
 				var newOrderItem = new PurchaseOrderItem
 				{
 					PurchaseOrderId = purchaseOrderId,
@@ -363,7 +359,6 @@ namespace Application.Services
 
 			purchaseOrder.TotalCost += totalAddedCost;
 			await unitOfWork.CommitTransaction();
-
 		}
 		private void UpdateExistingItemQuantities(List<OrderItemDto> itemsToUpdate, PurchaseOrder purchaseOrder, ref decimal totalAddedCost)
 		{

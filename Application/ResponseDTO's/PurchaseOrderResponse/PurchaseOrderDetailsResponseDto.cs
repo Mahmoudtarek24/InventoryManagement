@@ -1,4 +1,5 @@
-﻿using Application.DTO_s.PurchaseOrder;
+﻿using Application.Constants.Enum;
+using Application.DTO_s.PurchaseOrder;
 using Application.ResponseDTO_s.SupplierResponse;
 using Domain.Enum;
 using System;
@@ -14,7 +15,7 @@ namespace Application.ResponseDTO_s.PurchaseOrder
 		public int PurchaseOrderId { get; set; }
 		public DateTime ExpectedDeliveryDate { get; set; }
 		public decimal TotalCost { get; set; }
-		public PurchaseOrderStatus PurchaseOrderStatus { get; set; }
+		public PurchaseStatus PurchaseOrderStatus { get; set; }
 		public SupplierBaseResponsDto Supplier { get; set; }
 		public List<PurchaseOrderItemResponseDto> OrderItems { get; set; }
 		public DateTime CreatedOn { get; set; }

@@ -102,9 +102,6 @@ namespace Application.Mappings
 		}
 		public static PurchaseOrderListItemResponseDto ToResponseDto(this PurchaseOrder purchaseOrder)
 		{
-			if (purchaseOrder == null)
-				return null;
-
 			return new PurchaseOrderListItemResponseDto
 			{
 				ExpectedDeliveryDate = purchaseOrder.ExpectedDeliveryDate,
@@ -118,8 +115,6 @@ namespace Application.Mappings
 		}
 		public static PurchaseHistoryProductResponseDto ToResponseDto(this PurchaseOrderItem item)
 		{
-			if (item == null)
-				return null;
 
 			return new PurchaseHistoryProductResponseDto
 			{
@@ -175,7 +170,7 @@ namespace Application.Mappings
 				PurchaseOrderId = po.PurchaseOrderId,
 				ExpectedDeliveryDate = po.ExpectedDeliveryDate,
 				TotalCost = po.TotalCost,
-				PurchaseOrderStatus = po.PurchaseOrderStatus,
+				PurchaseOrderStatus =(PurchaseStatus) po.PurchaseOrderStatus,
 				NumberOfItems = po.OrderItems?.Count ?? 0
 			};
 		}
@@ -230,6 +225,17 @@ namespace Application.Mappings
 				return null;
 
 			return movement.SourceWarehouse.SerialNumber;
+		}
+
+		public static ProductInventoryResultDto ToProductInventoryResponseDto(this InventoryInfo inventory)  
+		{
+			return new ProductInventoryResultDto
+			{
+				InventoryId = inventory.InventoryId,
+				QuantityInStock = inventory.QuantityInStock,
+				WarehouseId = inventory.WarehouseId,
+				SerialNumber = inventory.SerialNumber,
+			};
 		}
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using Application.Constants.Enum;
 using Application.DTO_s.ProductDto_s;
 using Domain.Entity;
+using Domain.Enum;
 using Domain.Interface;
 using Domain.Parameters;
 using Infrastructure.Context;
@@ -165,5 +166,7 @@ namespace Infrastructure.Repository
 			     await context.Products
 				.Where(p => productIds.Contains(p.ProductId) && p.SupplierId == supplierId)
 				.ToListAsync();
+
+
 	}
 }
