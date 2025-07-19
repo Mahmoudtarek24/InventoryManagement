@@ -223,7 +223,7 @@ Database Views were created to retrieve complete supplier and related user infor
 ```http
 POST /api/auth/login
 {
-  "email": "admin@example.com",
-  "password": "YourSecurePassword123"
+  "email": "admin@Inventory.com",
+  "password": "P@ssword123"
 }
 ```
