@@ -6,5 +6,6 @@ namespace Application.ResponseDTO_s.SupplierResponse
 	{
 		public string Status { get; set; }
 		public string? Reason { get; set; }
+		public bool Verified { get; set; }
 	}
 }

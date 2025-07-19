@@ -195,6 +195,7 @@ namespace Application.Mappings
 			{
 				MovementDate = movement.MovementDate,
 				MovementType = (MovementType)movement.MovementType,
+			    ProductId=movement.prodcutId,
 				Quantity = movement.Quantity,
 				ProductName = movement.Product.Name,
 				WarehouseName = null,
@@ -213,11 +214,11 @@ namespace Application.Mappings
 
 			return item?.UnitPrice;
 		}
-		private static decimal? GetUnitPriceForWarehouse(StockMovement movement)
+		private static decimal GetUnitPriceForWarehouse(StockMovement movement)
 		{
 			var item = movement.Product?.PurchaseOrderItems
-				?.FirstOrDefault(e => e.ProductId == movement.prodcutId);
-			return item?.UnitPrice;
+				.FirstOrDefault(e => e.ProductId == movement.prodcutId);
+			return item.UnitPrice;
 		}
 		private static string? GetWarehouseName(StockMovement movement)
 		{

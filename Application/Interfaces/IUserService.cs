@@ -16,7 +16,7 @@ namespace Application.Interfaces
 		Task<ApiResponse<AuthenticationResponseDto>> FindByIdAsync(string userId);
 		Task<ApiResponse<AuthenticationResponseDto>> FindByEmailAsync(string email);
 		Task<PagedResponse<List<AuthenticationResponseDto>>> GetUsersWithPaginationAsync(ApplicationUserQueryParameters query, string route);
-		Task<ConfirmationResponseDto> UnLOckedUsers(string userId);
+		Task<ApiResponse<ConfirmationResponseDto>> UnLOckedUsers(string userId);
 		Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteUserAsync(string userId);
 		Task<ApiResponse<UpdateUserRespondDto>> UpdateProfileAsync(UpdateUserProfileDto dto);
 	}

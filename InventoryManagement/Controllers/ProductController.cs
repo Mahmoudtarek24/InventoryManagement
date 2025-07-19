@@ -3,6 +3,7 @@ using Application.DTO_s;
 using Application.DTO_s.ProductDto_s;
 using Application.Interfaces;
 using Application.Services;
+using InventoryManagement.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace InventoryManagement.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
+	[ServiceFilter(typeof(RequireVerifiedSupplierAttribute))]
 	public class ProductController : ControllerBase
 	{
 		private readonly IProductServices productServices;

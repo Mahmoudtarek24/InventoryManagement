@@ -22,8 +22,7 @@ namespace InventoryManagement.Controllers
 			this.userContextService = userContextService;	
 		}
 
-		[HttpGet] /// =>[HttpGet("{userId}")]=> with path parameter shoud sed user id , with query parameter can not send it
-		[Authorize(AuthenticationSchemes = AppRoles.Bearer)]
+		[HttpGet("by-ID")] /// =>[HttpGet("{userId}")]=> with path parameter shoud sed user id , with query parameter can not send it
 		public async Task<IActionResult> GetUserById([FromQuery] string? userId)
 		{
 			if (string.IsNullOrEmpty(userId))
@@ -34,14 +33,14 @@ namespace InventoryManagement.Controllers
 					return Forbid();
 			}
 			var result = await userService.FindByIdAsync(userId);
-			return Ok(result);
+			return StatusCode(result.StatusCode,result);
 		}
 
 		[HttpGet("by-email")]
 		public async Task<IActionResult> GetUserByEmail([FromQuery] string email)
 		{
 			var result = await userService.FindByEmailAsync(email);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 
 		[HttpGet("paginated")]
@@ -49,21 +48,21 @@ namespace InventoryManagement.Controllers
 		{
 			var route = $"{Request.Path}";
 			var result = await userService.GetUsersWithPaginationAsync(query, route);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 
 		[HttpPatch("unlock/{userId}")]
 		public async Task<IActionResult> UnlockUser(string userId)
 		{
 			var result = await userService.UnLOckedUsers(userId);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 
 		[HttpDelete("{userId}")]
 		public async Task<IActionResult> SoftDeleteUser(string userId)
 		{
 			var result = await userService.SoftDeleteUserAsync(userId);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 
 		[HttpPut("profile/{userId}")]
@@ -71,10 +70,10 @@ namespace InventoryManagement.Controllers
 		public async Task<IActionResult> UpdateUserProfile([FromRoute] string userId, [FromForm] UpdateUserProfileDto dto)
 		{
 			if (userId != dto.UserId)
-				return BadRequest();
+				return BadRequest("Route UserId not equal userId on object");
 
 			var result = await userService.UpdateProfileAsync(dto);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 	}
 }

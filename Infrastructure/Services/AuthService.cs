@@ -3,24 +3,16 @@ using Application.DTO_s.SupplierDto_s;
 using Application.Interfaces;
 using Application.ResponseDTO_s;
 using Application.ResponseDTO_s.AuthenticationResponse;
+using Application.ResponseDTO_s.ProductResponse;
 using Azure.Core;
 using Infrastructure.Enum;
-using Infrastructure.Identity_Models;
 using Infrastructure.InternalInterfaces;
 using Infrastructure.Mappings;
 using Infrastructure.Models;
-using Infrastructure.settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
@@ -40,13 +32,12 @@ namespace Infrastructure.Services
 		{
 			var existingUser = await userManager.FindByNameAsync(dto.UserName);
 			if (existingUser != null)
-				throw new Exception();
-			//throw new ConflictException($"Username '{dto.UserName}' already exists.");
+				return ApiResponse<AuthenticationResponseDto>.Failuer(404, $"Username '{dto.UserName}' already exists.");
 
 			var existingEmail = await userManager.FindByEmailAsync(dto.Email);
 			if (existingEmail != null)
-				throw new Exception();
-			//throw new ConflictException($"Email '{dto.Email}' already exists.");
+				return ApiResponse<AuthenticationResponseDto>.Failuer(404, $"Email '{dto.Email}' already exists.");
+
 
 			var invalidRoles = new List<string>();
 			var validRoles = new List<string>();
@@ -62,8 +53,7 @@ namespace Infrastructure.Services
 				}
 
 				if (invalidRoles.Any())
-					throw new Exception();
-				//throw new NotFoundException($"The following role IDs do not exist: {string.Join(", ", invalidRoles)}");
+					return ApiResponse<AuthenticationResponseDto>.ValidationError($"The following role IDs do not exist: {string.Join(", ", invalidRoles)}");
 			}
 
 			var newUser = new ApplicationUser
@@ -81,8 +71,7 @@ namespace Infrastructure.Services
 			if (!createResult.Succeeded)
 			{
 				var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-				throw new Exception();
-				//throw new InternalServerErrorException($"Failed to create user: {errors}");
+				throw new Exception($"Failed to create user: {errors}");
 			}
 
 			if (validRoles.Any())
@@ -91,8 +80,7 @@ namespace Infrastructure.Services
 				if (!addRolesResult.Succeeded)
 				{
 					var roleErrors = string.Join(", ", addRolesResult.Errors.Select(e => e.Description));
-					throw new Exception();
-					//throw new InternalServerErrorException($"User created but failed to assign roles: {roleErrors}");
+					throw new Exception($"User created but failed to assign roles: {roleErrors}");
 				}
 			}
 			var Message = $"User '{dto.UserName}' created successfully. Assigned roles: {(validRoles.Any() ? string.Join(", ", validRoles.ToArray()) : "None")}";
@@ -105,18 +93,15 @@ namespace Infrastructure.Services
 			var responseDto = new SignInResponseDto();
 			var user = await userManager.FindByEmailAsync(SignInDto.Email);
 			if (user is null)
-				throw new Exception();
-			//throw new UnauthorizedException("Invalid email or password.");
+				return ApiResponse<SignInResponseDto>.Unauthorized("Invalid email or password.");
 
 			var passwordValid = await userManager.CheckPasswordAsync(user, SignInDto.Password);
 			if (!passwordValid)
-				throw new Exception();
-			//throw new UnauthorizedException("Invalid email or password.");
+				return ApiResponse<SignInResponseDto>.Unauthorized("Invalid email or password.");
 
 			var isLockedOut = await userManager.IsLockedOutAsync(user);
 			if (isLockedOut)
-				throw new Exception();
-			//throw new UnauthorizedException("User account is locked out.");
+				return ApiResponse<SignInResponseDto>.Unauthorized("User account is locked out.");
 
 			var userRoles = await userManager.GetRolesAsync(user);
 
@@ -142,7 +127,7 @@ namespace Infrastructure.Services
 			return ApiResponse<SignInResponseDto>.Success(responseDto, 200, "Sign in successful");
 		}
 
-		public async Task RevokeTokenAsync(string refreshToken)
+		public async Task RevokeTokenAsync(string refreshToken) 
 		{
 			await tokenService.RevokeRefreshTokenAsync(refreshToken);
 		}
@@ -164,7 +149,6 @@ namespace Infrastructure.Services
 			      await userManager.Users.AsNoTracking().AnyAsync(e => e.PhoneNumber == phoneNumber);
 		public async Task<bool> IsValidRolesIdAsync(string[] RolesId)
 		{
-			///select count(*) from roletable where id in ("rol1 , role2,.....")
 			int validCount = await roleManager.Roles.AsNoTracking().CountAsync(r => RolesId.Contains(r.Id));
 			return validCount == RolesId.Length;
 		}
@@ -201,18 +185,15 @@ namespace Infrastructure.Services
 			if (!createResult.Succeeded)
 			{
 				var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-				throw new Exception();
-				//throw new InternalServerErrorException($"Failed to create user: {errors}");
+				throw new Exception($"Failed to create user: {errors}");
 			}
 
 			var addRolesResult = await userManager.AddToRoleAsync(supplierUser, $"{AppRoles.Supplier}");
 			if (!addRolesResult.Succeeded)
 			{
 				var roleErrors = string.Join(", ", addRolesResult.Errors.Select(e => e.Description));
-				throw new Exception();
-				//throw new InternalServerErrorException($"User created but failed to assign roles: {roleErrors}");
+				throw new Exception($"User created but failed to assign roles: {roleErrors}");
 			}
-
 			return supplierUser.Id;
 		}
 	}

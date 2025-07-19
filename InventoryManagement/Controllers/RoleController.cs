@@ -5,6 +5,7 @@ using Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace InventoryManagement.Controllers
 {
@@ -19,16 +20,19 @@ namespace InventoryManagement.Controllers
 			this.roleService = roleService;
 		}
 		[HttpGet]
+		[SwaggerOperation( Summary = "Get roles for dropdown",
+	    Description = "Returns a list of all roles to be used in dropdowns. Only accessible by Admin." )]
 		public async Task<IActionResult> GetRoles()
 		{
 			var result = await roleService.GetRoleListAsync();
-			return Ok(result);
+			return StatusCode(result.StatusCode,result);
 		}
 		[HttpPut("user")]
+		[SwaggerOperation( Summary = "Add or remove user from roles ")]
 		public async Task<IActionResult> UpdateUserRoles([FromBody] UpdateUserRolesDto dto)
 		{
 			var result = await roleService.UpdateUserRolesAsync(dto);
-			return Ok(result);
+			return StatusCode(result.StatusCode, result);
 		}
 	}
 }

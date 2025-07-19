@@ -9,7 +9,6 @@ namespace Domain.QueryParameters
 {
 	public class StockMovementFilter : BaseFilter
 	{
-		public int? WarehouseId { get; set; }
 		public int? ProductId { get; set; }
 		public string? MovementType { get; set; }
 		public DateTime? DateFrom { get; set; }

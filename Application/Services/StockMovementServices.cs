@@ -44,27 +44,25 @@ namespace Application.Services
 			}
 			await unitOfWork.CommitTransaction();
 		}
-
-		public async Task<ApiResponse<ConfirmationResponseDto>> RecordSaleAsync(List<RecordStockMovementDto> dtoList)
+		public async Task<ApiResponse<ConfirmationResponseDto>> RecordSaleAsync(RecordStockMovementDto dtoList)
 		{
 			var warnings = new List<string>();
-			var validatedItems = new List<(RecordStockMovementDto dto, Inventory inventory)>();
+			var validatedItems = new List<(ProductsMovment dto, Inventory inventory)>();
 
-			var productsIds = dtoList.Select(e => e.ProductId).Distinct().ToList();
-			var warehousesIds = dtoList.Select(e => e.WarehouseId).Distinct().ToList();
+			var productsIds = dtoList.ProductsMovments.Select(e => e.ProductId).Distinct().ToList();
 
 			var allInventories = await unitOfWork.InventoryRepository
-							  .GetInventorysByProductsAndWarehousesAsync(productsIds, warehousesIds);
+							  .GetInventorysByProductsAndWarehousesAsync(productsIds, new List<int> { dtoList.WarehouseId });
 
 			var inventoryLookup = allInventories.ToDictionary(e => e.ProductId + "_" + e.WarehouseId, e => e);
 
-			foreach (var dto in dtoList)
+			foreach (var dto in dtoList.ProductsMovments)
 			{
-				var key = $"{dto.ProductId}_{dto.WarehouseId}";
+				var key = $"{dto.ProductId}_{dtoList.WarehouseId}";
 
 				if (!inventoryLookup.TryGetValue(key, out var inventory))
 				{
-					warnings.Add($"Product ID {dto.ProductId} not found in warehouse ID {dto.WarehouseId}");
+					warnings.Add($"Product ID {dto.ProductId} not found in warehouse ID {dtoList.WarehouseId}");
 					continue;
 				}
 				if (inventory.QuantityInStock < dto.Quantity)
@@ -87,7 +85,7 @@ namespace Application.Services
 					Quantity = dto.Quantity,
 					MovementType = StockMovementType.Sale,
 					MovementDate = DateTime.Now,
-					SourceWarehouseId = dto.WarehouseId,
+					SourceWarehouseId = dtoList.WarehouseId,
 				};
 
 				await unitOfWork.StockMovementRepository.AddAsync(movement);
@@ -96,7 +94,7 @@ namespace Application.Services
 
 			var response = new ConfirmationResponseDto
 			{
-				Message = $"Bulk sale operation completed. {validatedItems.Count} out of {dtoList.Count} products processed successfully.",
+				Message = $"Bulk sale operation completed. {validatedItems.Count} out of {dtoList.ProductsMovments.Count} products processed successfully.",
 				status = validatedItems.Count > 0 ? ConfirmationStatus.register : ConfirmationStatus.Failed
 			};
 
@@ -116,8 +114,7 @@ namespace Application.Services
 						.GetInventorysByProductsAndWarehousesAsync(productIds, new List<int> { dto.SourceWarehouseId });
 
 			if (AllSourceInventory is null)
-				throw new Exception();
-			//throw new NotFoundException($"Product with ID {dto.ProductId} not found in source warehouse {dto.SourceWarehouseId}.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"No product found on Warehouse With id {dto.SourceWarehouseId} To Transefer it ");
 
 			var inventoryLookup = AllSourceInventory.ToDictionary(e => e.ProductId, e => e);
 
@@ -330,7 +327,6 @@ namespace Application.Services
 				searchTearm = query.searchTearm,
 				SortAscending = query.SortAscending,
 				SortBy = query.StockMovementOrdering.ToString(),
-				WarehouseId = query.WarehouseId,
 				ProductId = query.ProductId,
 				MovementType = query.MovementType.ToString(),
 				DateFrom = query.DateFrom,

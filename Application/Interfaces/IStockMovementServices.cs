@@ -12,7 +12,7 @@ namespace Application.Interfaces
 	public interface IStockMovementServices
 	{
 		Task RecordPurchaseAsync(List<RecordsPurchase> dto);
-		Task<ApiResponse<ConfirmationResponseDto>> RecordSaleAsync(List<RecordStockMovementDto> dto);
+		Task<ApiResponse<ConfirmationResponseDto>> RecordSaleAsync(RecordStockMovementDto dto);
 		Task<ApiResponse<ConfirmationResponseDto>> RecordTransferAsync(TransferStockDto dto);
 		Task<ApiResponse<ConfirmationResponseDto>> RecordAdjustmentAsync(AdjustmentDto dto);
 		Task<ApiResponse<List<StockMovementResponseDto>>> GetMovementsByProductAsync(int productId, int pageNumber);

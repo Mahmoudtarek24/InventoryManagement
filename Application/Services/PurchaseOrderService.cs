@@ -243,7 +243,7 @@ namespace Application.Services
 			warnings.AddRange(validationResult.Warnings);
 
 			if (!validItems.Any() && !validationResult.ItemsToUpdateQuantity.Any())
-				return ApiResponse<ConfirmationResponseDto>.BadReques("No valid items to add after validation.");
+				return ApiResponse<ConfirmationResponseDto>.BadRequest("No valid items to add after validation.");
 
 			var productIds = validItems.Select(item => item.ProductId).Distinct().ToList();
 			var productPrices = await unitOfWork.ProductRepository.GetProductPricesAsync(productIds);
@@ -526,16 +526,13 @@ namespace Application.Services
 
 			var purchaseOrder = await unitOfWork.PurchaseOrderRepository.GetPurchaseOrderWithItemsAsync(purchaseOrderId);
 			if (purchaseOrder == null || purchaseOrder.IsDeleted)
-				throw new Exception();
-				//throw new NotFoundException($"Purchase order with ID '{purchaseOrderId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"Purchase Order with ID '{purchaseOrderId}' was not found");
 
-			if (!IsValidStatusForOperation(key,(Application.Constants.Enum.PurchaseStatus) purchaseOrder.PurchaseOrderStatus))
-				throw new Exception();
-			//throw new BadRequestException($"Cannot remove items from purchase order with status '{purchaseOrder.PurchaseOrderStatus}'.");
+			if (!IsValidStatusForOperation(key,(PurchaseStatus) purchaseOrder.PurchaseOrderStatus))
+				return ApiResponse<ConfirmationResponseDto>.ValidationError($"Cannot remove items from purchase order with status '{purchaseOrder.PurchaseOrderStatus}'.");
 
-			if (dto?.ProductIds == null || !dto.ProductIds.Any())
-				throw new Exception();
-			//	throw new BadRequestException("No products to remove.");
+			if (dto?.ProductIds is null || !dto.ProductIds.Any())
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("No products to remove.");
 
 			var distinctProductIds = dto.ProductIds.Distinct().ToList();
 
@@ -552,9 +549,8 @@ namespace Application.Services
 			
 			int remainingItemsCount = purchaseOrder.OrderItems.Count - orderItemsToRemove.Count;
 			if (remainingItemsCount == 0)
-				throw new Exception();
-			//	throw new BadRequestException("Cannot remove all items from purchase order. Consider canceling the order instead.");
-
+				return ApiResponse<ConfirmationResponseDto>.ValidationError("Cannot remove all items from purchase order. Consider canceling the order instead.");
+			
 			if (!orderItemsToRemove.Any())
 			{
 				ConfirmationResponseDto noItemsResponseDto = new ConfirmationResponseDto()

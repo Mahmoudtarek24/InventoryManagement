@@ -10,12 +10,12 @@ namespace InventoryManagement.Filters
 		private readonly ImageSettings imageSettings ;
 		private readonly bool requiredToApply;
 		private readonly string FormFieldName;
-		public ValidateImageAttribute(string formFieldName, IOptions<ImageSettings> options, bool requiredToApply)
-		{
-			imageSettings = options.Value;	
-			this.requiredToApply = requiredToApply;
-			this.FormFieldName = formFieldName;
-		}
+		//public ValidateImageAttribute(string formFieldName, IOptions<ImageSettings> options, bool requiredToApply)
+		//{
+		//	imageSettings = options.Value;	
+		//	this.requiredToApply = requiredToApply;
+		//	this.FormFieldName = formFieldName;
+		//}
 
 		public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 		{

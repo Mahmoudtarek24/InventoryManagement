@@ -9,6 +9,7 @@ namespace InventoryManagement
 	{
 		public static IServiceCollection AddAPIServices(this IServiceCollection service, IConfiguration configuration)
 		{
+			service.AddScoped<RequireVerifiedSupplierAttribute>();
 			service.AddControllers().AddJsonOptions(options =>
 			{		
 				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());

@@ -1,4 +1,6 @@
 ﻿using Application.ResponseDTO_s.AuthenticationResponse;
+using Domain.Interface;
+using Infrastructure.Enum;
 using Infrastructure.Identity_Models;
 using Infrastructure.InternalInterfaces;
 using Infrastructure.Models;
@@ -24,12 +26,14 @@ namespace Infrastructure.Services
 		private readonly UserManager<ApplicationUser> userManager;
 		private readonly RoleManager<IdentityRole> roleManager;
 		private readonly JWTSetting jWTSetting;
+		private readonly IUnitOfWork unitOfWork;	
 		public TokenService(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager
-						  , IOptions<JWTSetting> options)
+						  , IOptions<JWTSetting> options, IUnitOfWork unitOfWork)
 		{
 			this.userManager = UserManager;
 			this.roleManager = roleManager;
 			this.jWTSetting = options.Value;
+			this.unitOfWork = unitOfWork;
 		}
 		public async Task<SignInResponseDto> RefreshTokenAsync(string token, HttpContext httpContext) //copy past
 		{
@@ -107,13 +111,17 @@ namespace Infrastructure.Services
 		{
 			List<Claim> claims = new List<Claim>();
 
-			if (userRoles.Length > 0)
+			if (userRoles.Contains($"{AppRoles.Supplier}"))
 			{
-				foreach (var role in userRoles)
-				{
-					claims.Add(new Claim(ClaimTypes.Role, role));
-				}
+				var SupplierVerification =await unitOfWork.SupplierRepository.IsVerifiedAndActiveSupplierAsync(user.Id);
+				claims.Add(new Claim("IsSupplierVerified", SupplierVerification.ToString()));
 			}
+
+			if (userRoles.Length > 0)
+				foreach (var role in userRoles)
+					claims.Add(new Claim(ClaimTypes.Role, role));
+			
+
 			claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
 			claims.Add(new Claim(ClaimTypes.Email, user.Email));
 			claims.Add(new Claim(ClaimTypes.Name, user.UserName));

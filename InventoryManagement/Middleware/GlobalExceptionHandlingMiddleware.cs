@@ -50,7 +50,7 @@ namespace InventoryManagement.Middleware
 				KeyNotFoundException => 
 				       ApiResponse<string>.ErrorResponse("The requested resource does not exist", "NOT_FOUND", 404),
 
-                _  => ApiResponse<string>.ErrorResponse($"An internal server error occurred", "INTERNAL_SERVER_ERROR", 500),
+				_ => ApiResponse<string>.ErrorResponse($"An internal server error occurred: {exception.Message}", "INTERNAL_SERVER_ERROR", 500),
 			};
 
 			response.StatusCode = errorResponse.StatusCode;

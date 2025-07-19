@@ -31,11 +31,10 @@ namespace Infrastructure.Services
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> UpdateUserRolesAsync(UpdateUserRolesDto dto)
 		{
-			// Find the user by ID
 			var user = await userManager.FindByIdAsync(dto.userId);
 			if (user == null)
-				throw new Exception();
-				//throw new NotFoundException($"User with ID '{dto.userId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"User with ID '{dto.userId}' not found.");
+
 
 			var invalidRoles = new List<string>();
 			foreach (var roleName in dto.roles)
@@ -46,8 +45,8 @@ namespace Infrastructure.Services
 			}
 
 			if (invalidRoles.Any())
-				throw new Exception();
-			//throw new NotFoundException($"The following roles do not exist: {string.Join(", ", invalidRoles)}");
+				 return ApiResponse<ConfirmationResponseDto>.ValidationError($"The following roles do not exist: {string.Join(", ", invalidRoles)}");
+
 
 			var currentRoles = await userManager.GetRolesAsync(user);
 
@@ -58,7 +57,7 @@ namespace Infrastructure.Services
 				{
 					var errors = string.Join(", ", removeResult.Errors.Select(e => e.Description));
 					throw new Exception();
-					//throw new InternalServerException($"Failed to remove current roles: {errors}");
+					//throw new InternalServerException($"Failed to remove current roles: {errors}");/////////////
 				}
 			}
 
@@ -69,7 +68,7 @@ namespace Infrastructure.Services
 				{
 					var errors = string.Join(", ", addResult.Errors.Select(e => e.Description));
 					throw new Exception();
-					//throw new InternalServerException($"Failed to add new roles: {errors}");
+					//throw new InternalServerException($"Failed to add new roles: {errors}");///////////////////
 				}
 			}
 

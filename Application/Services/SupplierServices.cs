@@ -161,25 +161,21 @@ namespace Application.Services
 
 		public async Task<ApiResponse<SupplierVerificationStatusBaseRespondDto>> GetVerificationStatusByIdAsync(string supplierId)
 		{
-			string actualSupplierId = supplierId;
+			Supplier existingSupplier;
+
 			if (userContextService.IsSupplier)
-			{
-				var supplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
-				if (supplier is null)
-					return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Failuer(404, $"Supplier with Id '{supplier?.SupplierId}' Not Found ");
-
-				actualSupplierId = supplier.SupplierId.ToString();
-			}
-
-			var existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(int.Parse(actualSupplierId));
+				existingSupplier = await unitOfWork.SupplierRepository.GetSupplierByUserIdAsync(supplierId);
+			else
+				existingSupplier = await unitOfWork.SupplierRepository.GetByIdAsync(int.Parse(supplierId));
+			
 			if (existingSupplier is null)
 				return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Failuer(404, $"Supplier with Id '{existingSupplier?.SupplierId}' Not Found ");
-
 
 			var responseDto = new SupplierVerificationStatusBaseRespondDto
 			{
 				Status = existingSupplier.VerificationStatus.ToString(),
-				Reason = existingSupplier.RejectionReason ?? "No enter reson"
+				Reason = existingSupplier.RejectionReason ?? "No enter reason",
+				Verified=existingSupplier.IsVerified
 			};
 			return ApiResponse<SupplierVerificationStatusBaseRespondDto>.Success(responseDto, 200, "Verification status retrieved successfully");
 		}

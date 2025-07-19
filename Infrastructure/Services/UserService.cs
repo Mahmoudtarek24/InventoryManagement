@@ -38,9 +38,8 @@ namespace Infrastructure.Services
 		public async Task<ApiResponse<AuthenticationResponseDto>> FindByIdAsync(string userId)
 		{
 			var user = await userManager.FindByIdAsync(userId);
-			if (user == null)
-				throw new Exception();
-			//throw new NotFoundException($"User with ID '{userId}' not found.");
+			if (user is null)
+			return ApiResponse<AuthenticationResponseDto>.Failuer(404, $"User with ID '{userId}' not found.");
 
 			var userRoles = await userManager.GetRolesAsync(user);
 
@@ -53,8 +52,7 @@ namespace Infrastructure.Services
 		{
 			var user = await userManager.FindByEmailAsync(email);
 			if (user == null)
-				throw new Exception();
-			//throw new NotFoundException($"User with email '{email}' not found.");
+				return ApiResponse<AuthenticationResponseDto>.Failuer(404, $"User with email '{email}' not found.");
 
 			// Get user roles
 			var userRoles = await userManager.GetRolesAsync(user);
@@ -121,32 +119,28 @@ namespace Infrastructure.Services
 			return (result, totalCount);
 		}
 
-		public async Task<ConfirmationResponseDto> UnLOckedUsers(string userId)
+		public async Task<ApiResponse<ConfirmationResponseDto>> UnLOckedUsers(string userId)
 		{
 			var user = await userManager.FindByIdAsync(userId);
 			if (user == null)
-				throw new Exception();
-			//throw new NotFoundException($"User with ID '{userId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"User with ID '{userId}' not found.");
 
 			var isLockedOut = await userManager.IsLockedOutAsync(user);
 			if (!isLockedOut)
-				throw new Exception();
-			//throw new BadRequestException($"User '{user.UserName}' is not currently locked out.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"User '{user.UserName}' is not currently locked out.");
 
 			var unlockResult = await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(-1));
 			if (!unlockResult.Succeeded)
 			{
 				var errors = string.Join(", ", unlockResult.Errors.Select(e => e.Description));
-				throw new Exception();
-				//throw new InternalServerErrorException($"Failed to unlock user: {errors}");
+				//throw new InternalServerErrorException($"Failed to unlock user: {errors}");////////////////////////////
 			}
 
 			var resetResult = await userManager.ResetAccessFailedCountAsync(user);
 			if (!resetResult.Succeeded)
 			{
 				var errors = string.Join(", ", resetResult.Errors.Select(e => e.Description));
-				throw new Exception();
-				//throw new InternalServerErrorException($"User unlocked but failed to reset access failed count: {errors}");
+				//throw new InternalServerErrorException($"User unlocked but failed to reset access failed count: {errors}");///////////////////////
 			}
 			user.LastUpdateOn = DateTime.Now;
 			var updateResult = await userManager.UpdateAsync(user);
@@ -154,7 +148,7 @@ namespace Infrastructure.Services
 			{
 				var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
 				throw new Exception();
-				//throw new InternalServerErrorException($"User unlocked but failed to reset access failed count: {errors}");
+				//throw new InternalServerErrorException($"User unlocked but failed to reset access failed count: {errors}");/////////////////
 			}
 
 			var responseDto = new ConfirmationResponseDto()
@@ -163,15 +157,14 @@ namespace Infrastructure.Services
 				status = ConfirmationStatus.Updated
 			};
 
-			return responseDto;
+			return ApiResponse<ConfirmationResponseDto>.Success(responseDto,200);
 		}
 
 		public async Task<ApiResponse<ConfirmationResponseDto>> SoftDeleteUserAsync(string userId)
 		{
 			var user = await userManager.FindByIdAsync(userId);
 			if (user == null)
-				throw new Exception();
-			//throw new NotFoundException($"User with ID '{userId}' not found.");
+				return ApiResponse<ConfirmationResponseDto>.Failuer(404, $"User with ID '{userId}' not found.");
 
 			user.IsDeleted =!user.IsDeleted;
 			user.LastUpdateOn = DateTime.Now;
@@ -180,7 +173,7 @@ namespace Infrastructure.Services
 			{
 				var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
 				throw new Exception();
-				//throw new InternalServerErrorException($"Failed to delete user: {errors}");
+				//throw new InternalServerErrorException($"Failed to delete user: {errors}");/////////////
 			}
 
 			var responseDto = new ConfirmationResponseDto()
@@ -196,24 +189,20 @@ namespace Infrastructure.Services
 		{
 			var existingUser = await userManager.FindByIdAsync(dto.UserId);
 			if (existingUser == null)
-				throw new Exception();
-			//throw new NotFoundException($"User with ID '{dto.UserId}' not found.");
-
+				return ApiResponse<UpdateUserRespondDto>.Failuer(404, $"User with ID '{dto.UserId}' not found.");
 
 			if (!string.IsNullOrEmpty(dto.UserName) && dto.UserName != existingUser.UserName)
 			{
 				var userNameExists = await userManager.FindByNameAsync(dto.UserName);
 				if (userNameExists != null)
-					throw new Exception();
-				//throw new ConflictException($"Username '{dto.UserName}' already exists.");
+					return ApiResponse<UpdateUserRespondDto>.ValidationError($"Username '{dto.UserName}' already exists.");
 			}
 
 			if (!string.IsNullOrEmpty(dto.Email) && dto.Email != existingUser.Email)
 			{
 				var emailExists = await userManager.FindByEmailAsync(dto.Email);
 				if (emailExists != null)
-					throw new Exception();
-				//throw new ConflictException($"Email '{dto.Email}' already exists.");
+					return ApiResponse<UpdateUserRespondDto>.ValidationError($"Username '{dto.UserName}' already exists.");
 			}
 
 			string imageFileName = null;
@@ -222,12 +211,10 @@ namespace Infrastructure.Services
 				var (uploadSuccess, fileName) = await imageStorageService.UploadImage(dto.ImageFile, ImageFolderName.User.ToString());
 				if (!uploadSuccess)
 					throw new Exception();
-				//throw new InternalServerErrorException("Failed to upload profile image.");
+				//throw new InternalServerErrorException("Failed to upload profile image.");/////////////////
 
 				if (!string.IsNullOrEmpty(existingUser.ProfileImage))
-				{
 					imageStorageService.DeleteImage(existingUser.ProfileImage);
-				}
 
 				imageFileName = $"{ImageFolderName.User.ToString()}/{fileName}";  //  products/product123.jpg will store on database
 			}
@@ -255,7 +242,7 @@ namespace Infrastructure.Services
 			{
 				var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
 				throw new Exception();
-				//throw new InternalServerErrorException($"Failed to update user profile: {errors}");
+				//throw new InternalServerErrorException($"Failed to update user profile: {errors}");///////////////
 			}
 
 			var BaseUri = uriService.GetBaseUri();

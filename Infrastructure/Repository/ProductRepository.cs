@@ -50,26 +50,26 @@ namespace Infrastructure.Repository
 
 			int totalCount = await query.CountAsync();
 
-			if (!string.IsNullOrEmpty(prodF.SortBy))
-			{
-				switch (prodF.SortBy.ToLower())
-				{
-					case "name":
-						query = prodF.SortAscending ? query.OrderBy(e => e.Name) : query.OrderByDescending(e => e.Name);
-						break;
+			//if (!string.IsNullOrEmpty(prodF.SortBy))
+			//{
+			//	switch (prodF.SortBy.ToLower())
+			//	{
+			//		case "name":
+			//			query = prodF.SortAscending ? query.OrderBy(e => e.Name) : query.OrderByDescending(e => e.Name);
+			//			break;
 
-					case "price":
-						query = prodF.SortAscending ? query.OrderBy(e => e.Price) : query.OrderByDescending(e => e.Price);
-						break;
-					case "isavailable":
-						query = prodF.SortAscending ? query.OrderBy(e => e.IsAvailable) : query.OrderByDescending(e => e.IsAvailable);
-						break;
+			//		case "price":
+			//			query = prodF.SortAscending ? query.OrderBy(e => e.Price) : query.OrderByDescending(e => e.Price);
+			//			break;
+			//		case "isavailable":
+			//			query = prodF.SortAscending ? query.OrderBy(e => e.IsAvailable) : query.OrderByDescending(e => e.IsAvailable);
+			//			break;
 
-					default:
-						query = prodF.SortAscending ? query.OrderBy(e => e.CreateOn) : query.OrderByDescending(e => e.CreateOn);
-						break;
-				}
-			}
+			//		default:
+			//			query = prodF.SortAscending ? query.OrderBy(e => e.CreateOn) : query.OrderByDescending(e => e.CreateOn);
+			//			break;
+			//	}
+			//}
 
 			query = query.Skip((prodF.PageNumber - 1) * prodF.PageSize).Take(prodF.PageSize);
 			var result = await query.ToListAsync();

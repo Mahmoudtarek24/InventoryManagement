@@ -15,9 +15,6 @@ namespace Application.ResponseDTO_s
 		public bool IsSuccess { get; set; }
 		public string? Message { get; set; }
 		public string ErrorCode { get; set; }
-		public Dictionary<string, string[]>? ValidationErrors { get; set; }
-
-
 		public ApiResponse()
 		{
 			IsSuccess = true;
@@ -66,17 +63,6 @@ namespace Application.ResponseDTO_s
 				Message = message
 			};
 		}
-		public static ApiResponse<T> ValidationError(Dictionary<string, string[]> validationErrors)
-		{
-			return new ApiResponse<T>
-			{
-				StatusCode = 400,
-				IsSuccess = false,
-				ErrorCode = "VALIDATION_ERROR",
-				Message = "One or more validation errors occurred",
-				ValidationErrors = validationErrors,
-			};
-		}
 		public static ApiResponse<T> Unauthorized(string message = "You are not authorized to access")
 		{
 			return new ApiResponse<T>
@@ -86,16 +72,6 @@ namespace Application.ResponseDTO_s
 				ErrorCode = "UNAUTHORIZED",
 				Message = message,
 			};
-		}
-
-		public static ApiResponse<T> Forbidden(string message)
-		{
-			return ErrorResponse(message, "FORBIDDEN", 403);
-		}
-
-		public static ApiResponse<T> BusinessError(string message, string errorCode = "BUSINESS_ERROR")
-		{
-			return ErrorResponse(message, errorCode, 400);
 		}
 		public static ApiResponse<T> ValidationError(string error)
 		{
@@ -118,8 +94,7 @@ namespace Application.ResponseDTO_s
 			result.ErrorMessages.AddRange(errors);
 			return result;
 		}
-
-		public static ApiResponse<T> BadReques(string error)
+		public static ApiResponse<T> BadRequest(string error)
 		{
 			return new ApiResponse<T>
 			{

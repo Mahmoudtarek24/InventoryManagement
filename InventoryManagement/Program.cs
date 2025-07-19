@@ -95,7 +95,8 @@ namespace InventoryManagement
 			builder.Services.AddAuthorization();
 
 			builder.Services.AddInfrastructure(builder.Configuration)
-							.AddApplication(builder.Configuration);
+							.AddApplication(builder.Configuration)
+							.AddAPIServices(builder.Configuration);
 
 			var app = builder.Build();
 

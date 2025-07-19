@@ -33,15 +33,10 @@ namespace Infrastructure.Repository
 		
 		public async Task<(int, List<StockMovement>)> GetStockMovementsWithFiltersAsync(StockMovementFilter query)
 		{
-			var stockMovementQuery = context.StockMovements.AsNoTracking().Include(sm => sm.Product)
+			var stockMovementQuery = context.StockMovements.AsNoTracking().Include(sm => sm.Product).ThenInclude(e=>e.PurchaseOrderItems)
 				         .Include(sm => sm.DestinationWarehouse).Include(sm => sm.SourceWarehouse).AsQueryable();
 
 		
-			if (query.WarehouseId.HasValue)
-				stockMovementQuery = stockMovementQuery.Where(e => e.SourceWarehouseId == query.WarehouseId.Value ||
-	                                         	e.DestinationWarehouseId == query.WarehouseId.Value);
-
-
 			if (query.ProductId.HasValue)
 				stockMovementQuery = stockMovementQuery.Where(sm => sm.prodcutId == query.ProductId.Value);
 
@@ -68,14 +63,6 @@ namespace Infrastructure.Repository
 			// Apply sorting
 			switch (query.StockMovementOrdering?.ToLower())
 			{
-				case "warehousename":
-					stockMovementQuery = query.SortAscending
-						? stockMovementQuery.OrderBy(e => e.SourceWarehouseId == query.WarehouseId.Value ||
-												     e.DestinationWarehouseId == query.WarehouseId.Value)
-						
-						: stockMovementQuery.OrderByDescending(e => e.SourceWarehouseId == query.WarehouseId.Value ||
-												               e.DestinationWarehouseId == query.WarehouseId.Value);
-					break;
 				case "quantity":
 					stockMovementQuery = query.SortAscending
 						? stockMovementQuery.OrderBy(sm => sm.Quantity)
@@ -84,7 +71,7 @@ namespace Infrastructure.Repository
 				default:
 					// Default sorting by creation date or movement date
 					stockMovementQuery = query.SortAscending
-						? stockMovementQuery.OrderBy(sm => sm.MovementDate)
+						? stockMovementQuery.OrderBy(sm => sm.MovementDate) 
 						: stockMovementQuery.OrderByDescending(sm => sm.MovementDate);
 					break;
 			}

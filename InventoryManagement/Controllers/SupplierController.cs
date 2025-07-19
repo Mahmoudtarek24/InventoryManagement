@@ -63,6 +63,7 @@ namespace InventoryManagement.Controllers
 	    Description = @"Allows a supplier to update their own data, or an admin to update any supplier's data.
 		- If user is **Supplier**, they can only update their own `CompanyName` and `Address`.
 		- If user is **Admin**, they can also update `IsVerified` and `Notes` For Supplier.")]
+		[ServiceFilter(typeof(RequireVerifiedSupplierAttribute))]
 		public async Task<IActionResult> UpdateSupplie([FromQuery] string? SupplierId, [FromBody] UpdateSupplierDto dto)
 		{
 			if (userContextService.IsSupplier)
@@ -81,7 +82,7 @@ namespace InventoryManagement.Controllers
 		}
 		[HttpPost("upload-Document")]
 		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.Supplier)]
-		[TypeFilter(typeof(ValidateImageAttribute),Arguments = new object[] { "ImageFile", true })]
+		//[TypeFilter(typeof(ValidateImageAttribute),Arguments = new object[] { "ImageFile", true })]
 		[SwaggerOperation( Summary = "Upload supplier verification ",
 	    Description = @"Allows a supplier to upload a verification document such as a tax card or business registration.
         - The uploaded document will be reviewed by an Admin to verify the supplier's identity.")]
@@ -170,6 +171,7 @@ namespace InventoryManagement.Controllers
 		Authorization:
 		- Requires authentication as **Supplier** " )]
 		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = AppRoles.Supplier)]
+		[ServiceFilter(typeof(RequireVerifiedSupplierAttribute))]
 		public async Task<IActionResult> SupplierReceiving(int purchaseOrderId)
 		{
 			var result = await supplierService.SimulateSupplierReceivingAsync(purchaseOrderId);
@@ -181,6 +183,7 @@ namespace InventoryManagement.Controllers
 		[SwaggerOperation( Summary = "Get purchase orders that are pending or partially received ",
 	   Description = "Returns all purchase orders for the currently authenticated supplier that" +
 			" are either still pending (not fully processed) or partially received.")]
+		[ServiceFilter(typeof(RequireVerifiedSupplierAttribute))]
 		public async Task<IActionResult> GetSupplierPendingPurchaseOrders()
 		{
 			var result = await supplierService.GetPendingPurchaseOrdersForSupplierAsync();

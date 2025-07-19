@@ -109,7 +109,6 @@ namespace Application.Services
 				PageSize = productQuery.PageSize,
 				searchTearm = productQuery.searchTearm,
 				SortAscending = productQuery.SortAscending,
-				SortBy = productQuery.SortBy,
 			};
 
 			var (products, totalCount) = await unitOfWork.ProductRepository.GetProductsWithFiltersAsync(parameter);

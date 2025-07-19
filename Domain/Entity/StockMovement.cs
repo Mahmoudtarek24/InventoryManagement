@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Domain.Entity
 {
 	public class StockMovement
-	{
+	{ 
 		public int StockMovementId { get; set; }	 
 		public StockMovementType MovementType { get; set; }	
 		public DateTime MovementDate {  get; set; }	

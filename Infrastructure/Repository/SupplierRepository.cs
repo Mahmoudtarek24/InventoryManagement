@@ -105,6 +105,8 @@ namespace Infrastructure.Repository
 			await  context.Supplier
 		                     .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsDeleted);
 
+		public async Task<bool> IsVerifiedAndActiveSupplierAsync(string userId) =>
+			 await context.Supplier.AnyAsync(s => s.UserId == userId && s.IsVerified );
 
 		//public async override Task<IEnumerable<Supplier>> GetAllEntities()
 		//{

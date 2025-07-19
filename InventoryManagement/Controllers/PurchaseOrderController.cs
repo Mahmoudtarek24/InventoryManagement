@@ -90,6 +90,10 @@ namespace InventoryManagement.Controllers
 		}
 		
 		[HttpDelete("{id}/items")]
+		[Authorize(AuthenticationSchemes = AppRoles.Bearer, Roles = $"{AppRoles.Admin},{AppRoles.InventoryManager}")]
+		[SwaggerOperation( Summary = "Remove items from a purchase order",
+    	Description = @"This endpoint removes specific products from an existing purchase order by product IDs.
+		- You cannot remove all items; at least one item must remain in the order. " )]
 		public async Task<IActionResult> RemoveOrderItem(int id, [FromBody] RemoveOrderItemsDto dto )
 		{
 			var result = await purchaseOrderService.RemoveOrderItemsAsync(id, dto);

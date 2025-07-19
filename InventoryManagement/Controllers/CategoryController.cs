@@ -19,6 +19,7 @@ namespace InventoryManagement.Controllers
 					///if incoming request dint validate our model constraint will  return outomatically 400 -bad Request
 					///also response for model binding
 	[ValidateModel]
+	[ServiceFilter(typeof(RequireVerifiedSupplierAttribute))]
 	public class CategoryController : ControllerBase
 	{
 		private readonly ICategoryServices categoryServices;
