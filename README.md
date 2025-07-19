@@ -25,6 +25,7 @@ The system manages supplier purchases, stock storage across multiple warehouses,
 #### 🧑‍💼 Supplier Onboarding & Verification
 - Suppliers register and upload tax documents for verification by admins
 - Only verified suppliers can receive purchase orders or upload products
+- A supplier **cannot perform any action** in the system **until verified by an Admin**.
 
 #### 📥 Purchase Orders
 - Inventory managers and Admin can create purchase orders with multiple products and send them to suppliers
