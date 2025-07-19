@@ -23,7 +23,6 @@ The system manages supplier purchases, stock storage across multiple warehouses,
 - Supports full product CRUD operations, bulk creation, and category-based queries
 
 #### 🧑‍💼 Supplier Onboarding & Verification
-- Suppliers register and upload tax documents for verification by admins
 - Only verified suppliers can receive purchase orders or upload products
 - A supplier **cannot perform any action** in the system **until verified by an Admin**.
 
