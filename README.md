@@ -205,18 +205,18 @@ Database Views were created to retrieve complete supplier and related user infor
 
 | Parent Entity | Child Entity | Relationship Type | Foreign Key | Description |
 |---------------|---------------|------------------|-------------|-------------|
-| Category | Product | One-to-Many | category_id | One category can have multiple products |
-| Supplier | Product | One-to-Many | supplier_id | One supplier can provide multiple products |
-| ApplicationUser | Supplier | One-to-One | user_id | One user is linked to one supplier |
-| Supplier | PurchaseOrder | One-to-Many | supplier_id | One supplier can create multiple purchase orders |
-| Warehouse | PurchaseOrder | One-to-Many | warehouse_id | One warehouse can receive multiple purchase orders |
-| PurchaseOrder | PurchaseOrderItem | One-to-Many | purchase_order_id | One purchase order contains multiple items |
-| Product | PurchaseOrderItem | One-to-Many | product_id | One product can be in multiple purchase order items |
-| Warehouse | Inventory | One-to-Many | warehouse_id | One warehouse contains inventory of multiple products |
-| Product | Inventory | One-to-Many | product_id | One product can have inventory in multiple warehouses |
-| Product | StockMovement | One-to-Many | product_id | One product can have multiple stock movements |
-| Warehouse | StockMovement (Source) | One-to-Many | source_warehouse_id | One warehouse can be source of multiple stock movements |
-| Warehouse | StockMovement (Destination) | One-to-Many | destination_warehouse_id | One warehouse can be destination of multiple stock movements |
+| Category | Product | One-to-Many | CategoryId | One category can have multiple products |
+| Supplier | Product | One-to-Many | SupplierId | One supplier can provide multiple products |
+| ApplicationUser | Supplier | One-to-One | userid | One user is linked to one supplier |
+| Supplier | PurchaseOrder | One-to-Many | SupplierId | One supplier can create multiple purchase orders |
+| Warehouse | PurchaseOrder | One-to-Many | WarehouseId | One warehouse can receive multiple purchase orders |
+| PurchaseOrder | PurchaseOrderItem | One-to-Many | PurchaseOrderId | One purchase order contains multiple items |
+| Product | PurchaseOrderItem | One-to-Many | ProductId | One product can be in multiple purchase order items |
+| Warehouse | Inventory | One-to-Many | WarehouseId | One warehouse contains inventory of multiple products |
+| Product | Inventory | One-to-Many | ProductId | One product can have inventory in multiple warehouses |
+| Product | StockMovement | One-to-Many | ProductId | One product can have multiple stock movements |
+| Warehouse | StockMovement (Source) | One-to-Many | SourceWarehouseId | One warehouse can be source of multiple stock movements |
+| Warehouse | StockMovement (Destination) | One-to-Many | DestinationWarehouseId | One warehouse can be destination of multiple stock movements |
 
 ## 🚀 How to Use the System
 
