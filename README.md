@@ -132,7 +132,7 @@ InventoryManagement/
 - Role-based authorization using Claims (`Admin`, `Supplier`, `InventoryManager`, `SalesViewer`)
 - Centralized user context extraction using custom middleware: [`UserContextMiddleware`](https://github.com/Mahmoudtarek24/InventoryManagement/blob/main/InventoryManagement/Middleware/UserContextMiddleware.cs)
 - Relies on [`UserContextService`](https://github.com/Mahmoudtarek24/InventoryManagement/blob/main/Infrastructure/Services/UserContextService.cs) to access `UserId`, `Roles`, `IsSupplier`, `Route` from any layer of the application
-- Custom RequireVerifiedSupplierAttribute is an IAsyncAuthorizationFilter that provides additional verification to ensure only verified suppliers can perform specific operations
+- Custom [`RequireVerifiedSupplierAttribute`](https://github.com/Mahmoudtarek24/InventoryManagement/blob/master/InventoryManagement/Filters/RequireVerifiedSupplierAttribute.cs) is an IAsyncAuthorizationFilter that provides additional verification to ensure only verified suppliers can perform specific operations
 
 #### 🧱 Architecture & Patterns
 - Clean Architecture applied with separation into: Domain, Application, Infrastructure, and API layers
